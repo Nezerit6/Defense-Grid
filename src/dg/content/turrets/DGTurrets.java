@@ -37,7 +37,7 @@ public class DGTurrets {
             ));
             size = 1;
             health = 280;
-            range = 95f;
+            range = 110f;
             reload = 30f;
             recoil = 1f;
             shootCone = 40f;
@@ -51,7 +51,7 @@ public class DGTurrets {
 
             shootType = new LightningBulletType(){{
                 damage = 23;
-                lightningLength = 13;
+                lightningLength = 17;
                 collidesAir = false;
                 ammoMultiplier = 1f;
                 buildingDamageMultiplier = 0.25f;
