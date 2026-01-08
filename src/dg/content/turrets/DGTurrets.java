@@ -1,14 +1,12 @@
 package dg.content.turrets;
 
-import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.math.Interp;
+import dg.entities.bullet.ChainLightningBulletType;
 import mindustry.content.*;
-import mindustry.entities.abilities.MoveEffectAbility;
 import mindustry.entities.bullet.*;
 import mindustry.entities.effect.*;
 import mindustry.entities.part.RegionPart;
-import mindustry.entities.pattern.ShootAlternate;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Layer;
 import mindustry.graphics.Pal;
@@ -37,24 +35,25 @@ public class DGTurrets {
             ));
             size = 1;
             health = 280;
-            range = 110f;
+            range = 115f;
             reload = 30f;
             recoil = 1f;
             shootCone = 40f;
-            rotateSpeed = 8f;
+            rotateSpeed = 3.5f;
             targetAir = false;
             heatColor = Color.red;
             shootSound = Sounds.spark;
             shootEffect = Fx.lightningShoot;
-            consumePower(3.8f);
+            consumePower(4.3f);
             coolant = consumeCoolant(0.1f);
 
-            shootType = new LightningBulletType(){{
+            shootType = new ChainLightningBulletType(){{
                 damage = 23;
-                lightningLength = 17;
+                lightningLength = 19;
+                chainDamageFalloff = 0.15f;
+                maxChains = 3;
                 collidesAir = false;
-                ammoMultiplier = 1f;
-                buildingDamageMultiplier = 0.25f;
+                buildingDamageMultiplier = 0.35f;
 
                 lightningType = new BulletType(0.0001f, 0f){{
                     lifetime = Fx.lightning.lifetime;
@@ -69,6 +68,7 @@ public class DGTurrets {
                 }};
             }};
         }};
+
         // todo rework
         needler = new ItemTurret("needler"){{
             requirements(Category.turret, BuildVisibility.hidden, with(
@@ -322,6 +322,7 @@ public class DGTurrets {
             ammo(
                     Items.blastCompound, new MissileBulletType(2.5f, 18){{
                         ammoMultiplier = 3f;
+                        smokeEffect = Fx.shootBigSmoke;
 
                         spawnUnit = new MissileUnitType("arcflash-missile"){{
                             outlineColor = Pal.darkerMetal;
@@ -348,6 +349,7 @@ public class DGTurrets {
                                 mirror = false;
                                 reload = 1f;
                                 shootOnDeath = true;
+                                shootSound = Sounds.none;
                                 bullet = new ExplosionBulletType(90f, 30f){{
                                     collidesAir = false;
                                     shootEffect = new MultiEffect(Fx.blastExplosion, new WaveEffect(){{
@@ -403,6 +405,7 @@ public class DGTurrets {
             minWarmup = 0.95f;
             shootWarmupSpeed = 0.05f;
             targetAir = false;
+            predictTarget = false;
             targetUnderBlocks = false;
             ammoPerShot = 2;
             maxAmmo = 20;
@@ -410,7 +413,7 @@ public class DGTurrets {
             recoil = 0.5f;
             shake = 3.5f;
             shootCone = 8f;
-            rotateSpeed = 2.5f;
+            rotateSpeed = 1.8f;
 
             shootSound = Sounds.mediumCannon;
             coolant = consumeCoolant(0.2f);
