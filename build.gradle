@@ -51,33 +51,22 @@ configurations.configureEach{
 
 tasks.register('jarAndroid'){
     dependsOn "jar"
-
     doLast{
         if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
-
         def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists() }
-
         if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
 
-        //collect dependencies needed for desugaring
         def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
-
         def d8 = isWindows ? "d8.bat" : "d8"
         def d8Path = "$sdkRoot/build-tools"
         def buildToolsDir = new File(d8Path).listFiles()?.sort()?.reverse()?.find{ it.isDirectory() }
-
         if(!buildToolsDir) throw new GradleException("No build-tools found in Android SDK")
-
         def d8Executable = new File(buildToolsDir, d8)
-
         if(!d8Executable.exists()) throw new GradleException("d8 not found at: $d8Executable")
 
-        //dex and desugar files
-        def command = "\"$d8Executable\" $dependencies --min-api 14 --output ${project.name}Android.jar ${project.name}Desktop.jar"
-
+        def command = "${d8Executable.absolutePath} $dependencies --min-api 14 --output ${project.name}Android.jar ${project.name}Desktop.jar"
         def process = command.execute(null, new File("build/libs"))
         process.waitForProcessOutput(System.out, System.err)
-
         if(process.exitValue() != 0){
             throw new GradleException("d8 failed with exit code: ${process.exitValue()}")
         }
