@@ -17,7 +17,7 @@ java{
 
 ext{
     //the build number that this mod is made for
-    mindustryVersion = 'v146'
+    mindustryVersion = 'v147'
     jabelVersion = "93fde537c7"
     //windows sucks
     isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
@@ -94,11 +94,18 @@ tasks.register('deploy', Jar){
     dependsOn jar
     archiveFileName = "${project.name}.jar"
 
-    from{ [zipTree("build/libs/${project.name}Desktop.jar"), zipTree("build/libs/${project.name}Android.jar")] }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    from(zipTree("build/libs/${project.name}Desktop.jar"))
+
+    from(zipTree("build/libs/${project.name}Android.jar")){
+        include '*.dex'
+    }
 
     doLast{
         delete{
             delete "build/libs/${project.name}Android.jar"
+            delete "build/libs/${project.name}Desktop.jar"
         }
     }
 }

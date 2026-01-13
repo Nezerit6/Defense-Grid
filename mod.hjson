@@ -4,5 +4,5 @@ author: "Nezerit6"
 main: "dg.DefenseGrid"
 description: "A focused turret expansion for vanilla Mindustry. Designed around clean progression and minimal redundancy."
 version: 0.1.0
-minGameVersion: 146
+minGameVersion: 147
 java: true
