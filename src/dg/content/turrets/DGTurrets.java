@@ -42,7 +42,7 @@ public class DGTurrets {
             rotateSpeed = 3.5f;
             targetAir = false;
             heatColor = Color.red;
-            shootSound = Sounds.spark;
+            shootSound = Sounds.shootArc;
             shootEffect = Fx.lightningShoot;
             consumePower(4.3f);
             coolant = consumeCoolant(0.1f);
@@ -130,7 +130,7 @@ public class DGTurrets {
             shootCone = 12f;
             ammoPerShot = 2;
             targetAir = false;
-            shootSound = Sounds.artillery;
+            shootSound = Sounds.shootFuse;
             ammoUseEffect = Fx.casing2;
             coolant = consumeCoolant(0.2f);
 
@@ -270,7 +270,6 @@ public class DGTurrets {
             moveWhileCharging = false;
             accurateDelay = false;
             heatColor = Color.valueOf("afeeee");
-            shootSound = Sounds.malignShoot;
             loopSound = Sounds.none;
             shootEffect = Fx.none;
             smokeEffect = Fx.hitLancer;
@@ -336,7 +335,7 @@ public class DGTurrets {
                             trailLength = 8;
                             health = 50;
                             lowAltitude = true;
-                            loopSound = Sounds.missileTrail;
+                            loopSound = Sounds.loopMissileTrail;
                             loopSoundVolume = 0.1f;
                             deathSound = Sounds.explosion;
                             targetAir = false;
@@ -415,7 +414,7 @@ public class DGTurrets {
             shootCone = 8f;
             rotateSpeed = 1.8f;
 
-            shootSound = Sounds.mediumCannon;
+            shootSound = Sounds.shootFuse;
             coolant = consumeCoolant(0.2f);
 
             limitRange();

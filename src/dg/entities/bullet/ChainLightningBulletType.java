@@ -68,7 +68,7 @@ public class ChainLightningBulletType extends BulletType {
             Fx.chainLightning.at(fromX, fromY, 0f, lightningColor, target);
 
             float currentDamage = this.damage * Mathf.pow(1f - chainDamageFalloff, chain);
-            Damage.collideLine(b, b.team, hitEffect, fromX, fromY,
+            Damage.collideLine(b, b.team, fromX, fromY,
                     Mathf.angle(toX - fromX, toY - fromY),
                     Mathf.dst(fromX, fromY, toX, toY), true, false);
 
@@ -107,7 +107,7 @@ public class ChainLightningBulletType extends BulletType {
             float targetY = b.y + Mathf.sinDeg(angle) * maxRange;
 
             Fx.chainLightning.at(b.x, b.y, 0f, lightningColor, new Vec2(targetX, targetY));
-            Damage.collideLine(b, b.team, hitEffect, b.x, b.y, angle, maxRange, true, false);
+            Damage.collideLine(b, b.team, b.x, b.y, angle, maxRange, true, false);
         }
     }
 }

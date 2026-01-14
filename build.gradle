@@ -17,7 +17,7 @@ java{
 
 ext{
     //the build number that this mod is made for
-    mindustryVersion = 'v147'
+    mindustryVersion = 'v154'
     jabelVersion = "93fde537c7"
     //windows sucks
     isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
@@ -51,25 +51,22 @@ configurations.configureEach{
 
 tasks.register('jarAndroid'){
     dependsOn "jar"
+
     doLast{
         if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
+
         def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists() }
+
         if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
 
+        //collect dependencies needed for desugaring
         def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList() + [new File(platformRoot, "android.jar")]).collect{ "--classpath $it.path" }.join(" ")
-        def d8 = isWindows ? "d8.bat" : "d8"
-        def d8Path = "$sdkRoot/build-tools"
-        def buildToolsDir = new File(d8Path).listFiles()?.sort()?.reverse()?.find{ it.isDirectory() }
-        if(!buildToolsDir) throw new GradleException("No build-tools found in Android SDK")
-        def d8Executable = new File(buildToolsDir, d8)
-        if(!d8Executable.exists()) throw new GradleException("d8 not found at: $d8Executable")
 
-        def command = "${d8Executable.absolutePath} $dependencies --min-api 14 --output ${project.name}Android.jar ${project.name}Desktop.jar"
-        def process = command.execute(null, new File("build/libs"))
-        process.waitForProcessOutput(System.out, System.err)
-        if(process.exitValue() != 0){
-            throw new GradleException("d8 failed with exit code: ${process.exitValue()}")
-        }
+        def d8 = isWindows ? "d8.bat" : "d8"
+
+        //dex and desugar files - this requires d8 in your PATH
+        "$d8 $dependencies --min-api 14 --output ${project.name}Android.jar ${project.name}Desktop.jar"
+                .execute(null, new File("build/libs")).waitForProcessOutput(System.out, System.err)
     }
 }
 
@@ -94,18 +91,11 @@ tasks.register('deploy', Jar){
     dependsOn jar
     archiveFileName = "${project.name}.jar"
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    from(zipTree("build/libs/${project.name}Desktop.jar"))
-
-    from(zipTree("build/libs/${project.name}Android.jar")){
-        include '*.dex'
-    }
+    from{ [zipTree("build/libs/${project.name}Desktop.jar"), zipTree("build/libs/${project.name}Android.jar")] }
 
     doLast{
         delete{
             delete "build/libs/${project.name}Android.jar"
-            delete "build/libs/${project.name}Desktop.jar"
         }
     }
 }
