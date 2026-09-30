@@ -50,7 +50,7 @@ public class DGTurrets {
             targetAir = false;
             heatColor = Color.red;
             shootSound = Sounds.spark;
-            shootEffect = Fx.lightningShoot;
+            shootEffect = DGFx.arcletShoot;
             consumePower(4.3f);
             coolant = consumeCoolant(0.1f);
 
@@ -64,7 +64,7 @@ public class DGTurrets {
 
                 lightningType = new BulletType(0.0001f, 0f){{
                     lifetime = Fx.lightning.lifetime;
-                    hitEffect = Fx.hitLancer;
+                    hitEffect = DGFx.arcHit;
                     despawnEffect = Fx.none;
                     status = StatusEffects.shocked;
                     statusDuration = 10f;
@@ -90,7 +90,8 @@ public class DGTurrets {
             recoil = 0.3f;
             inaccuracy = 4f;
             rotateSpeed = 10;
-            ammoUseEffect = Fx.casing1;
+            ammoUseEffect = DGFx.needleCasing;
+            shootEffect = DGFx.needleShoot;
             shootSound = Sounds.shoot;
             coolant = consumeCoolant(0.1f);
 
@@ -138,7 +139,7 @@ public class DGTurrets {
             ammoPerShot = 2;
             targetAir = false;
             shootSound = Sounds.artillery;
-            ammoUseEffect = Fx.casing2;
+            ammoUseEffect = DGFx.shatterCasing;
             shootEffect = DGFx.shatterShoot;
             smokeEffect = DGFx.shatterSmoke;
             shake = 1.5f;
@@ -152,6 +153,8 @@ public class DGTurrets {
                         splashDamageRadius = 26f;
                         knockback = 0.8f;
                         collidesTiles = false;
+                        hitEffect = DGFx.shatterBurst;
+                        despawnEffect = Fx.none;
 
                         hitColor = backColor = trailColor = Color.valueOf("ea8878");
                         trailLength = 12;
@@ -170,6 +173,7 @@ public class DGTurrets {
                             height = 5f;
                             pierceBuilding = true;
                             pierceCap = 2;
+                            hitEffect = despawnEffect = DGFx.shrapnelHit;
                         }};
                     }},
 
@@ -182,6 +186,8 @@ public class DGTurrets {
                         collidesTiles = false;
                         homingPower = 0.08f;
                         homingRange = 60f;
+                        hitEffect = DGFx.shatterBurst;
+                        despawnEffect = Fx.none;
                         reloadMultiplier = 1.15f;
                         ammoMultiplier = 3f;
 
@@ -202,6 +208,7 @@ public class DGTurrets {
                             height = 5f;
                             pierceBuilding = true;
                             pierceCap = 2;
+                            hitEffect = despawnEffect = DGFx.shrapnelHit;
                         }};
                     }},
 
@@ -215,6 +222,8 @@ public class DGTurrets {
                         status = StatusEffects.burning;
                         statusDuration = 60f * 10f;
                         makeFire = true;
+                        hitEffect = DGFx.shatterBurstFire;
+                        despawnEffect = Fx.none;
                         ammoMultiplier = 3f;
 
                         frontColor = Pal.lightishOrange;
@@ -235,6 +244,7 @@ public class DGTurrets {
                             height = 5f;
                             pierceBuilding = true;
                             pierceCap = 2;
+                            hitEffect = despawnEffect = DGFx.shrapnelHit;
                             status = StatusEffects.burning;
                         }};
                     }}
@@ -324,7 +334,7 @@ public class DGTurrets {
                         homingRange = 60f;
                         ammoMultiplier = 0.2f;
                         collidesAir = false;
-                        hitEffect = Fx.none;
+                        hitEffect = despawnEffect = DGFx.cryoHit;
                         chargeEffect = new MultiEffect(Fx.lancerLaserCharge, Fx.lancerLaserChargeBegin);
                         fragBullets = 1;
                     }}
@@ -442,12 +452,7 @@ public class DGTurrets {
                                 shootSound = Sounds.none;
                                 bullet = new ExplosionBulletType(90f, 30f){{
                                     collidesAir = false;
-                                    shootEffect = new MultiEffect(Fx.blastExplosion, new WaveEffect(){{
-                                        colorFrom = colorTo = Pal.missileYellow;
-                                        sizeTo = 30f;
-                                        lifetime = 10f;
-                                        strokeFrom = 3f;
-                                    }});
+                                    shootEffect = DGFx.arcflashBoom;
                                     buildingDamageMultiplier = 0.35f;
 
                                     status = StatusEffects.blasted;
