@@ -30,20 +30,24 @@ public class DGTechTree {
             node(arcflash, () -> {});
         });
 
+        addToNode(Blocks.arc, () -> {
+            node(pulse, () -> {});
+        });
+
+        addToNode(Blocks.fuse, () -> {
+            node(glaive, () -> {});
+        });
+
         addToNode(Blocks.lancer, () -> {
-            node(stormcoil, () -> {});
+            node(singularity, () -> {});
         });
 
         addToNode(Blocks.ripple, () -> {
-            node(quake, () -> {});
+            node(beacon, () -> {});
         });
 
-        addToNode(Blocks.wave, () -> {
-            node(glacier, () -> {});
-        });
-
-        addToNode(Blocks.swarmer, () -> {
-            node(hornet, () -> {});
+        addToNode(Blocks.lancer, () -> {
+            node(capacitor, () -> {});
         });
     }
 

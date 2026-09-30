@@ -4,9 +4,9 @@ import arc.graphics.Color;
 import arc.math.Interp;
 import dg.content.DGFx;
 import dg.entities.bullet.*;
-import dg.entities.part.*;
 import dg.world.blocks.SmokeTestBlock;
-import dg.world.draw.DrawPrismTurret;
+import dg.world.blocks.turrets.CapacitorTurret;
+import dg.world.draw.DrawEmptyTurret;
 import mindustry.content.*;
 import mindustry.entities.bullet.*;
 import mindustry.entities.effect.*;
@@ -31,7 +31,7 @@ public class DGTurrets {
 
             arclet, needler, shatter, cryolance, arcflash,
 
-            stormcoil, quake, glacier, hornet,
+            pulse, glaive, singularity, beacon, capacitor,
 
             smokeTest;
 
@@ -431,591 +431,243 @@ public class DGTurrets {
             limitRange();
         }};
 
-        stormcoil = new PowerTurret("stormcoil"){{
+        pulse = new PowerTurret("pulse"){{
             requirements(Category.turret, with(
-                    Items.copper, 150,
-                    Items.lead, 120,
-                    Items.graphite, 50,
-                    Items.silicon, 90,
-                    Items.titanium, 60
+                    Items.copper, 70,
+                    Items.lead, 50,
+                    Items.silicon, 45,
+                    Items.graphite, 30
             ));
-            size = 2;
-            scaledHealth = 200;
-            range = 150f;
-            reload = 50f;
-            recoil = 0f;
-            shootY = 0f;
-            shootCone = 50f;
-            rotateSpeed = 5f;
-            targetAir = false;
-            heatColor = Pal.lancerLaser;
-            shootSound = Sounds.spark;
-            shootEffect = Fx.none;
+            size = 1;
+            health = 300;
+            range = 130f;
+            reload = 55f;
+            recoil = 1f;
+            rotateSpeed = 6f;
+            shootCone = 10f;
+            heatColor = DGFx.pulseColor;
+            shootSound = Sounds.lasershoot;
+            shootEffect = DGFx.pulseShoot;
             smokeEffect = Fx.none;
-            consumePower(7f);
-            coolant = consumeCoolant(0.2f);
+            consumePower(2.5f);
+            coolant = consumeCoolant(0.1f);
 
-            shootType = new ChainLightningBulletType(){{
-                damage = 34;
-                lightningLength = 24;
-                chainDamageFalloff = 0.12f;
-                maxChains = 5;
-                chainEffect = DGFx.chainArc;
-                chainZ = 10.5f;
-                hitEffect = DGFx.arcHit;
-                collidesAir = false;
+            shootType = new RicochetBulletType(4.5f, 16){{
+                lifetime = 30f;
+                width = 7f;
+                height = 11f;
+                bounces = 6;
+                bounceRange = 90f;
+                damageScale = 1.15f;
+                speedScale = 1.08f;
+                frontColor = Color.white;
+                backColor = hitColor = trailColor = DGFx.pulseColor;
+                trailLength = 7;
+                trailWidth = 1.8f;
+                hitEffect = DGFx.ricochet;
+                despawnEffect = DGFx.pulseShoot;
                 buildingDamageMultiplier = 0.3f;
             }};
-
-            Color copperLight = Color.valueOf("f0b27a"), copperDark = Color.valueOf("8a5530"), copper = Color.valueOf("d99f6b");
-            PartProgress ready = PartProgress.reload.inv();
-            PartProgress armed = PartProgress.warmup.mul(ready);
-
-            drawer = new DrawPrismTurret(){{
-                parts.addAll(
-                        new PrismPart(){{
-                            verts = regular(8, 7.2f, 22.5f);
-                            z1 = 1.6f;
-                            top = Color.valueOf("6a6b75");
-                        }},
-                        new PrismPart(){{
-                            verts = rect(0f, 0f, 1.8f, 4.5f);
-                            mirror = true;
-                            x = 4.2f;
-                            y = 2.8f;
-                            z0 = 1.6f;
-                            z1 = 3.6f;
-                            moveX = 0.6f;
-                            top = copper;
-                            light = copperLight;
-                            dark = copperDark;
-                            glow = Pal.lancerLaser;
-                            glowProgress = PartProgress.heat.add(armed.mul(0.25f));
-                        }},
-                        new TubePart(){{
-                            z1 = 1.6f;
-                            z2 = 2.8f;
-                            radius = 3.6f;
-                            capColor = Color.valueOf("5a5b66");
-                        }},
-                        new TubePart(){{
-                            z1 = 2.8f;
-                            z2 = 4f;
-                            radius = 1f;
-                        }},
-                        new TubePart(){{
-                            z1 = 4f;
-                            z2 = 4.7f;
-                            radius = 3f;
-                            lightColor = copperLight;
-                            darkColor = copperDark;
-                            capColor = copper;
-                        }},
-                        new TubePart(){{
-                            z1 = 4.7f;
-                            z2 = 5.9f;
-                            radius = 0.9f;
-                        }},
-                        new TubePart(){{
-                            z1 = 5.9f;
-                            z2 = 6.6f;
-                            radius = 2.6f;
-                            lightColor = copperLight;
-                            darkColor = copperDark;
-                            capColor = copper;
-                        }},
-                        new TubePart(){{
-                            z1 = 6.6f;
-                            z2 = 7.8f;
-                            radius = 0.8f;
-                        }},
-                        new TubePart(){{
-                            z1 = 7.8f;
-                            z2 = 8.5f;
-                            radius = 2.2f;
-                            lightColor = copperLight;
-                            darkColor = copperDark;
-                            capColor = copper;
-                        }},
-                        new TubePart(){{
-                            z1 = 8.5f;
-                            z2 = 9.6f;
-                            radius = 0.7f;
-                        }},
-                        new ArcPart(){{
-                            mirror = true;
-                            x1 = 4.2f;
-                            y1 = 4.8f;
-                            z1 = 3.6f;
-                            x2 = 2.6f;
-                            y2 = 0.6f;
-                            z2 = 4.6f;
-                            progress = armed;
-                            chance = 0.45f;
-                            jitter = 0.7f;
-                            stroke = 0.6f;
-                        }},
-                        new ArcPart(){{
-                            mirror = true;
-                            x1 = 2f;
-                            z1 = 8.4f;
-                            z2 = 10.5f;
-                            progress = armed;
-                            chance = 0.5f;
-                            jitter = 0.6f;
-                            stroke = 0.55f;
-                        }},
-                        new OrbPart(){{
-                            z = 10.5f;
-                            radius = 1f;
-                            radiusTo = 1.9f;
-                            progress = ready;
-                            alphaProgress = PartProgress.warmup.mul(0.6f).add(0.4f);
-                            coreColor = Color.valueOf("e8efff");
-                            pulseScl = 4f;
-                            pulseMag = 0.1f;
-                            pool = 3f;
-                        }},
-                        new OrbPart(){{
-                            z = 10.5f;
-                            radius = 0f;
-                            radiusTo = 3.2f;
-                            progress = PartProgress.heat.curve(Interp.pow2Out);
-                            alphaProgress = PartProgress.heat;
-                            spikes = 1.8f;
-                            spikeRotateSpeed = 3f;
-                            pool = 0f;
-                        }},
-                        new OrbitPart(){{
-                            z = 10.5f;
-                            count = 4;
-                            radius = 3.4f;
-                            tilt = 60f;
-                            spinSpeed = 4f;
-                            shardWidth = 0.8f;
-                            shardLength = 1.5f;
-                            color = Color.white;
-                            backColor = Pal.lancerLaser.cpy().mul(0.7f);
-                            progress = PartProgress.warmup;
-                            alphaProgress = PartProgress.warmup;
-                        }}
-                );
-            }};
         }};
 
-        quake = new ItemTurret("quake"){{
+        glaive = new ItemTurret("glaive"){{
             requirements(Category.turret, with(
-                    Items.copper, 180,
-                    Items.graphite, 140,
-                    Items.silicon, 60,
-                    Items.titanium, 90
-            ));
-            size = 2;
-            scaledHealth = 240;
-            range = 300f;
-            minRange = 40f;
-            reload = 95f;
-            recoil = 2.5f;
-            rotateSpeed = 1.6f;
-            inaccuracy = 3f;
-            shootCone = 10f;
-            shootY = 7f;
-            shake = 2.5f;
-            targetAir = false;
-            shootSound = Sounds.artillery;
-            ammoUseEffect = DGFx.quakeCasing;
-            shootEffect = DGFx.quakeShoot;
-            smokeEffect = DGFx.quakeSmoke;
-            coolant = consumeCoolant(0.2f);
-
-            Color amber = Color.valueOf("e8a04c"), amberLight = Color.valueOf("ffe0b0");
-
-            ammo(
-                    Items.graphite, new LobBulletType(2.6f, 20){{
-                        lifetime = 115f;
-                        width = height = 13f;
-                        splashDamage = 70f;
-                        splashDamageRadius = 32f;
-                        knockback = 1f;
-                        hitEffect = DGFx.quakeBurst;
-                        despawnEffect = Fx.none;
-                        hitColor = backColor = trailColor = amber;
-                        frontColor = amberLight;
-                        trailLength = 10;
-                        trailWidth = 1.6f;
-                    }},
-                    Items.silicon, new LobBulletType(2.6f, 20){{
-                        lifetime = 115f;
-                        width = height = 13f;
-                        splashDamage = 70f;
-                        splashDamageRadius = 32f;
-                        knockback = 1f;
-                        homingPower = 0.06f;
-                        homingRange = 70f;
-                        reloadMultiplier = 1.2f;
-                        ammoMultiplier = 3f;
-                        hitEffect = DGFx.quakeBurst;
-                        despawnEffect = Fx.none;
-                        hitColor = backColor = trailColor = amber;
-                        frontColor = amberLight;
-                        trailLength = 10;
-                        trailWidth = 1.6f;
-                    }},
-                    Items.blastCompound, new LobBulletType(2.4f, 25){{
-                        lifetime = 125f;
-                        width = height = 15f;
-                        splashDamage = 110f;
-                        splashDamageRadius = 44f;
-                        knockback = 1.5f;
-                        status = StatusEffects.blasted;
-                        reloadMultiplier = 0.8f;
-                        ammoMultiplier = 2f;
-                        arcHeight = 55f;
-                        hitEffect = DGFx.quakeBurstBlast;
-                        despawnEffect = Fx.none;
-                        hitColor = backColor = trailColor = Pal.missileYellowBack;
-                        frontColor = Pal.missileYellow;
-                        trailLength = 12;
-                        trailWidth = 1.9f;
-                    }}
-            );
-
-            drawer = new DrawTurret(){{
-                parts.addAll(
-                        new LiftPart("-barrel"){{
-                            progress = PartProgress.recoil.curve(Interp.pow2In);
-                            moveY = -2.5f;
-                            lift = 2f;
-                            liftProgress = PartProgress.warmup.curve(Interp.smooth);
-                            shadowAlpha = 0.75f;
-                            heatColor = Color.valueOf("f06a1a");
-                            heatLight = true;
-                        }},
-                        new RisePart(){{
-                            y = 7f;
-                            spread = 1f;
-                            particles = 4;
-                            lifetime = 50f;
-                            rise = 9f;
-                            drift = 2.5f;
-                            size = 0.9f;
-                            sizeTo = 2.2f;
-                            alpha = 0.5f;
-                            color = Color.valueOf("a5a6ad");
-                            colorTo = DGFx.smokeColor;
-                            progress = PartProgress.heat;
-                            layer = Layer.bullet - 1f;
-                        }}
-                );
-            }};
-        }};
-
-        glacier = new LiquidTurret("glacier"){{
-            requirements(Category.turret, with(
-                    Items.metaglass, 120,
-                    Items.lead, 150,
-                    Items.silicon, 90,
-                    Items.titanium, 110,
-                    Items.plastanium, 40
+                    Items.copper, 110,
+                    Items.graphite, 80,
+                    Items.titanium, 70
             ));
             size = 2;
             scaledHealth = 220;
-            range = 205f;
-            reload = 110f;
-            recoil = 1.5f;
-            rotateSpeed = 3f;
-            shootY = 6f;
-            liquidCapacity = 60f;
+            range = 125f;
+            reload = 70f;
+            recoil = 2f;
+            rotateSpeed = 5f;
+            shootCone = 8f;
             targetAir = false;
-            extinguish = false;
-            shootSound = Sounds.malignShoot;
-            loopSound = Sounds.none;
-            shootEffect = DGFx.glacierShoot;
-            smokeEffect = DGFx.frostPuff;
-            consumePower(3f);
-
-            Color cryo = Color.valueOf("afeeee");
+            shootSound = Sounds.swish;
+            shootEffect = DGFx.glaiveThrow;
+            smokeEffect = Fx.none;
+            drawer = new DrawEmptyTurret();
+            coolant = consumeCoolant(0.2f);
 
             ammo(
-                    Liquids.cryofluid, new FrostOrbBulletType(2.2f, 45){{
-                        lifetime = 95f;
-                        hitSize = 7f;
-                        splashDamage = 40f;
-                        splashDamageRadius = 30f;
-                        status = StatusEffects.freezing;
-                        statusDuration = 240f;
-                        collidesAir = false;
-                        ammoMultiplier = 0.3f;
-                        hitEffect = despawnEffect = DGFx.glacierBurst;
-                        trailLength = 8;
-                        trailWidth = 2.4f;
-                        trailColor = cryo;
-
-                        fragBullets = 7;
-                        fragRandomSpread = 360f;
-                        fragVelocityMin = 0.7f;
-                        fragBullet = new BasicBulletType(3.2f, 12){{
-                            width = 5f;
-                            height = 9f;
-                            lifetime = 14f;
-                            frontColor = Color.white;
-                            backColor = cryo;
-                            status = StatusEffects.freezing;
-                            statusDuration = 60f;
-                            collidesAir = false;
-                            hitEffect = despawnEffect = DGFx.shrapnelHit;
-                            hitColor = cryo;
-                        }};
+                    Items.titanium, new GlaiveBulletType(4.2f, 32){{
+                        lifetime = 90f;
+                        hitSize = 9f;
+                        backColor = hitColor = trailColor = Color.valueOf("8da1e3");
+                        frontColor = Color.white;
+                        trailLength = 6;
+                        trailWidth = 2f;
+                        hitEffect = DGFx.glaiveHit;
+                        buildingDamageMultiplier = 0.4f;
+                    }},
+                    Items.plastanium, new GlaiveBulletType(4.2f, 40){{
+                        lifetime = 90f;
+                        hitSize = 11f;
+                        bladeLength = 8.5f;
+                        blades = 4;
+                        catchReload = 0.8f;
+                        ammoMultiplier = 2f;
+                        backColor = hitColor = trailColor = Pal.plastaniumBack;
+                        frontColor = Pal.plastaniumFront;
+                        trailLength = 6;
+                        trailWidth = 2.2f;
+                        hitEffect = DGFx.glaiveHit;
+                        buildingDamageMultiplier = 0.4f;
+                    }},
+                    Items.thorium, new GlaiveBulletType(3.6f, 60){{
+                        lifetime = 105f;
+                        hitSize = 10f;
+                        reloadMultiplier = 0.75f;
+                        knockback = 2f;
+                        backColor = hitColor = trailColor = Color.valueOf("f9a3c7");
+                        frontColor = Color.white;
+                        trailLength = 6;
+                        trailWidth = 2f;
+                        hitEffect = DGFx.glaiveHit;
+                        buildingDamageMultiplier = 0.4f;
                     }}
             );
+        }};
 
-            PartProgress ready = PartProgress.reload.inv();
+        singularity = new PowerTurret("singularity"){{
+            requirements(Category.turret, with(
+                    Items.lead, 150,
+                    Items.silicon, 130,
+                    Items.titanium, 100,
+                    Items.thorium, 80,
+                    Items.surgeAlloy, 40
+            ));
+            size = 2;
+            scaledHealth = 240;
+            range = 130f;
+            reload = 240f;
+            recoil = 0f;
+            rotateSpeed = 2f;
+            shootCone = 10f;
+            targetAir = false;
+            moveWhileCharging = false;
+            accurateDelay = false;
+            shoot.firstShotDelay = 50f;
+            chargeSound = Sounds.lasercharge2;
+            shootSound = Sounds.plasmaboom;
+            shootEffect = Fx.none;
+            smokeEffect = Fx.none;
+            drawer = new DrawEmptyTurret();
+            consumePower(9f);
+            coolant = consumeCoolant(0.3f);
 
-            drawer = new DrawPrismTurret(){{
-                parts.addAll(
-                        new PrismPart(){{
-                            verts = regular(6, 7.4f, 0f);
-                            z1 = 1.8f;
-                            top = Color.valueOf("5c6070");
-                            light = Color.valueOf("8a8fa0");
-                            dark = Color.valueOf("34374a");
-                        }},
-                        new RisePart(){{
-                            mirror = true;
-                            x = 4.5f;
-                            y = -3f;
-                            spread = 1.5f;
-                            particles = 4;
-                            lifetime = 80f;
-                            rise = 7f;
-                            drift = 2f;
-                            size = 0.9f;
-                            sizeTo = 2.2f;
-                            alpha = 0.35f;
-                            color = Color.white;
-                            colorTo = cryo;
-                            progress = PartProgress.warmup;
-                            layer = Layer.bullet - 1f;
-                        }},
-                        new PrismPart(){{
-                            verts = rect(0f, 0f, 2.2f, 9f);
-                            mirror = true;
-                            x = 3.6f;
-                            y = 2f;
-                            z0 = 1.8f;
-                            z1 = 3.8f;
-                            moveX = 0.5f;
-                            recoilY = 1.5f;
-                            top = Color.valueOf("6974c4");
-                            light = Color.valueOf("8aa3f4");
-                            dark = Color.valueOf("3c4580");
-                            glow = cryo;
-                            glowProgress = PartProgress.warmup.mul(ready).mul(0.5f);
-                        }},
-                        new PrismPart(){{
-                            verts = regular(6, 2.6f, 30f);
-                            y = -2f;
-                            z0 = 1.8f;
-                            z1 = 5.5f;
-                            top = cryo;
-                            light = Color.valueOf("e8ffff");
-                            dark = Color.valueOf("6974c4");
-                            insetColor = Color.valueOf("e8ffff");
-                            glow = cryo;
-                            glowProgress = PartProgress.warmup.mul(ready).mul(0.7f).add(PartProgress.heat);
-                        }},
-                        new OrbitPart(){{
-                            y = 6f;
-                            z = 4f;
-                            count = 5;
-                            radius = 6f;
-                            radiusTo = 3f;
-                            tilt = 60f;
-                            spinSpeed = 3f;
-                            spinProgress = 180f;
-                            shardWidth = 1.2f;
-                            shardLength = 2.6f;
-                            color = Color.valueOf("d8f6ff");
-                            backColor = Color.valueOf("6974c4");
-                            progress = ready.curve(Interp.pow2Out);
-                            alphaProgress = PartProgress.warmup.mul(ready.curve(0.3f, 0.7f).clamp());
-                        }},
-                        new OrbPart(){{
-                            y = 6f;
-                            z = 4f;
-                            radius = 0f;
-                            radiusTo = 2f;
-                            color = cryo;
-                            coreColor = Color.valueOf("d8ffff");
-                            coreScl = 0.45f;
-                            progress = ready.curve(Interp.pow2In);
-                            alphaProgress = PartProgress.warmup;
-                            spikes = 1.6f;
-                            spikeRotateSpeed = 2f;
-                        }}
-                );
+            shootType = new GravityWellBulletType(3.8f, 0f){{
+                lifetime = 200f;
+                drag = 0.03f;
+                splashDamage = 180f;
+                splashDamageRadius = 56f;
+                tickDamage = 6f;
+                pullRadius = 80f;
+                pullForce = 0.6f;
+                hitShake = 5f;
+                hitSound = Sounds.plasmaboom;
+                chargeEffect = DGFx.singularityCharge;
+                buildingDamageMultiplier = 0.25f;
             }};
         }};
 
-        hornet = new ItemTurret("hornet"){{
+        beacon = new ItemTurret("beacon"){{
             requirements(Category.turret, with(
-                    Items.copper, 130,
-                    Items.graphite, 90,
-                    Items.silicon, 80,
-                    Items.titanium, 50
+                    Items.copper, 200,
+                    Items.graphite, 150,
+                    Items.silicon, 120,
+                    Items.titanium, 100,
+                    Items.plastanium, 60
             ));
             size = 2;
             scaledHealth = 200;
-            range = 250f;
-            reload = 70f;
+            range = 420f;
+            minRange = 60f;
+            reload = 210f;
             recoil = 1f;
-            rotateSpeed = 4f;
-            inaccuracy = 6f;
-            shootCone = 30f;
+            rotateSpeed = 2.5f;
+            shootCone = 6f;
+            targetAir = false;
             shootSound = Sounds.missile;
-            shootEffect = DGFx.hornetLaunch;
-            smokeEffect = DGFx.missileSmoke;
+            shootEffect = DGFx.markerShoot;
+            smokeEffect = Fx.none;
+            drawer = new DrawEmptyTurret();
             coolant = consumeCoolant(0.2f);
 
-            shoot = new ShootBarrel(){{
-                barrels = new float[]{
-                        -2.2f, 2f, 0f,
-                        2.2f, 2f, 0f,
-                        -2.2f, -0.6f, 0f,
-                        2.2f, -0.6f, 0f
-                };
-                shots = 4;
-                shotDelay = 5f;
-            }};
-
-            Color smoke = Color.valueOf("a5a6ad");
-
             ammo(
-                    Items.blastCompound, new MissileBulletType(3.4f, 14){{
-                        lifetime = 75f;
-                        width = 7f;
-                        height = 9f;
-                        splashDamage = 30f;
-                        splashDamageRadius = 22f;
-                        status = StatusEffects.blasted;
-                        ammoMultiplier = 4f;
-                        buildingDamageMultiplier = 0.4f;
-                        trailChance = 0f;
-                        trailInterval = 3f;
-                        trailEffect = DGFx.missileSmoke;
-                        trailColor = smoke;
-                        hitEffect = despawnEffect = DGFx.hornetPop;
+                    Items.blastCompound, new MarkerBulletType(8f, 10, new StrikeBulletType(260f, 48f)){{
+                        lifetime = 53f;
+                        width = 5f;
+                        height = 10f;
+                        frontColor = Color.white;
+                        backColor = hitColor = trailColor = DGFx.strikeColor;
+                        trailLength = 8;
+                        trailWidth = 1.2f;
+                        hitEffect = DGFx.markerShoot;
                     }},
-                    Items.pyratite, new MissileBulletType(3.4f, 12){{
-                        lifetime = 75f;
-                        width = 7f;
-                        height = 9f;
-                        splashDamage = 22f;
-                        splashDamageRadius = 18f;
+                    Items.pyratite, new MarkerBulletType(8f, 10, new StrikeBulletType(190f, 44f){{
                         status = StatusEffects.burning;
+                        statusDuration = 60f * 8f;
                         makeFire = true;
-                        ammoMultiplier = 4f;
+                        incendAmount = 12;
+                        incendSpread = 26f;
+                        incendChance = 1f;
+                        hitEffect = DGFx.strikeBoomFire;
+                        color = Pal.lightOrange;
+                    }}){{
+                        lifetime = 53f;
+                        width = 5f;
+                        height = 10f;
+                        ammoMultiplier = 2f;
                         frontColor = Pal.lightishOrange;
-                        backColor = Pal.lightOrange;
-                        trailChance = 0f;
-                        trailInterval = 3f;
-                        trailEffect = DGFx.missileSmoke;
-                        trailColor = smoke;
-                        hitEffect = despawnEffect = DGFx.hornetPop;
-                    }},
-                    Items.silicon, new MissileBulletType(3.6f, 12){{
-                        lifetime = 70f;
-                        width = 7f;
-                        height = 9f;
-                        splashDamage = 20f;
-                        splashDamageRadius = 16f;
-                        homingPower = 0.15f;
-                        reloadMultiplier = 1.3f;
-                        ammoMultiplier = 5f;
-                        trailChance = 0f;
-                        trailInterval = 3f;
-                        trailEffect = DGFx.missileSmoke;
-                        trailColor = smoke;
-                        hitEffect = despawnEffect = DGFx.hornetPop;
+                        backColor = hitColor = trailColor = Pal.lightOrange;
+                        trailLength = 8;
+                        trailWidth = 1.2f;
+                        hitEffect = DGFx.markerShoot;
                     }}
             );
+        }};
 
-            Color red = Color.valueOf("da6b68"), orange = Color.valueOf("feb380"), redDark = Color.valueOf("8a3c3a");
-            PartProgress armed = PartProgress.warmup.mul(PartProgress.reload.inv().curve(0.8f, 0.2f).clamp());
+        capacitor = new CapacitorTurret("capacitor"){{
+            requirements(Category.turret, with(
+                    Items.copper, 120,
+                    Items.lead, 110,
+                    Items.silicon, 100,
+                    Items.titanium, 60,
+                    Items.surgeAlloy, 20
+            ));
+            size = 2;
+            scaledHealth = 210;
+            range = 190f;
+            reload = 45f;
+            recoil = 0f;
+            rotateSpeed = 8f;
+            shootCone = 30f;
+            maxStacks = 12;
+            stackTime = 40f;
+            releaseInterval = 4f;
+            shootSound = Sounds.lasershoot;
+            shootEffect = DGFx.capacitorShoot;
+            smokeEffect = Fx.none;
+            consumePower(5f);
+            coolant = consumeCoolant(0.2f);
 
-            drawer = new DrawPrismTurret(){{
-                parts.addAll(
-                        new PrismPart(){{
-                            verts = new float[]{-6f, -6.5f, 6f, -6.5f, 7f, -5f, 7f, 4f, 5.5f, 6f, -5.5f, 6f, -7f, 4f, -7f, -5f};
-                            z1 = 1.4f;
-                            top = Color.valueOf("6a6b75");
-                        }},
-                        new PrismPart(){{
-                            verts = rect(0f, 0f, 1.6f, 7f);
-                            mirror = true;
-                            x = 5.3f;
-                            y = 0.5f;
-                            z0 = 1.4f;
-                            z1 = 3.4f;
-                            recoilY = 0.8f;
-                            top = red;
-                            light = orange;
-                            dark = redDark;
-                        }},
-                        new PrismPart(){{
-                            verts = rect(0f, 0f, 9f, 9.5f);
-                            y = 0.5f;
-                            z0 = 1.4f;
-                            z1 = 4.2f;
-                            recoilY = 1.2f;
-                            glow = orange;
-                            glowProgress = PartProgress.heat.mul(0.6f);
-                        }},
-                        new TubePart(){{
-                            mirror = true;
-                            x = 2.2f;
-                            y = 2f;
-                            z1 = 4.2f;
-                            z2 = 4.9f;
-                            radius = 1.5f;
-                            capColor = Color.valueOf("2c2d38");
-                        }},
-                        new TubePart(){{
-                            mirror = true;
-                            x = 2.2f;
-                            y = -0.6f;
-                            z1 = 4.2f;
-                            z2 = 4.9f;
-                            radius = 1.5f;
-                            capColor = Color.valueOf("2c2d38");
-                        }},
-                        new OrbPart(){{
-                            mirror = true;
-                            x = 2.2f;
-                            y = 2f;
-                            z = 4.9f;
-                            radius = 0.7f;
-                            color = red;
-                            coreColor = orange;
-                            progress = PartProgress.constant(1f);
-                            alphaProgress = armed;
-                            pool = 0f;
-                            lightRadius = 2f;
-                        }},
-                        new OrbPart(){{
-                            mirror = true;
-                            x = 2.2f;
-                            y = -0.6f;
-                            z = 4.9f;
-                            radius = 0.7f;
-                            color = red;
-                            coreColor = orange;
-                            progress = PartProgress.constant(1f);
-                            alphaProgress = armed;
-                            pool = 0f;
-                            lightRadius = 2f;
-                        }}
-                );
+            shootType = new BasicBulletType(4f, 20){{
+                lifetime = 50f;
+                width = 7f;
+                height = 7f;
+                sprite = "circle-bullet";
+                homingPower = 0.12f;
+                homingRange = 80f;
+                splashDamage = 12f;
+                splashDamageRadius = 14f;
+                frontColor = Color.white;
+                backColor = hitColor = trailColor = DGFx.gold;
+                trailLength = 6;
+                trailWidth = 1.8f;
+                hitEffect = despawnEffect = DGFx.capacitorHit;
+                buildingDamageMultiplier = 0.35f;
             }};
         }};
 

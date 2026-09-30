@@ -35,8 +35,8 @@ public class SmokeTestBlock extends Block{
     }
 
     static final Preset[] presets = {
-        new Preset("Quake", new SmokeStyle(7, 9f, 14f, 3.2f, 70f, Color.valueOf("8b8c95"), Color.valueOf("6e7080"))),
-        new Preset("Hornet", new SmokeStyle(9, 12f, 18f, 3.4f, 90f, Color.valueOf("a5a6ad"), Color.valueOf("6e7080"))),
+        new Preset("Heavy", new SmokeStyle(7, 9f, 14f, 3.2f, 70f, Color.valueOf("8b8c95"), Color.valueOf("6e7080"))),
+        new Preset("Billow", new SmokeStyle(9, 12f, 18f, 3.4f, 90f, Color.valueOf("a5a6ad"), Color.valueOf("6e7080"))),
         new Preset("Frost", new SmokeStyle(6, 7f, 10f, 2.4f, 45f, Color.white, Color.valueOf("afeeee"))),
         new Preset("Plant", new SmokeStyle(10, 10f, 26f, 3.6f, 160f, Color.valueOf("c4c5cc"), Color.valueOf("5d5e68"))),
         new Preset("Soot", new SmokeStyle(8, 8f, 20f, 3f, 120f, Color.valueOf("4d4e58"), Color.valueOf("2c2d38"))),

@@ -7,7 +7,6 @@ import arc.struct.Seq;
 import mindustry.content.Fx;
 import mindustry.content.StatusEffects;
 import mindustry.entities.Damage;
-import mindustry.entities.Effect;
 import mindustry.entities.Units;
 import mindustry.entities.bullet.BulletType;
 import mindustry.gen.Bullet;
@@ -20,8 +19,6 @@ public class ChainLightningBulletType extends BulletType {
     public int lightningLengthRand;
     public int maxChains = 3;
     public float chainDamageFalloff = 0.2f;
-    public Effect chainEffect = Fx.chainLightning;
-    public float chainZ = 0f;
 
     public ChainLightningBulletType() {
         this.lightningColor = Pal.lancerLaser;
@@ -68,7 +65,7 @@ public class ChainLightningBulletType extends BulletType {
             final float toX = target.x();
             final float toY = target.y();
 
-            chainEffect.at(fromX, fromY, chain == 0 ? chainZ : 0f, lightningColor, target);
+            Fx.chainLightning.at(fromX, fromY, 0f, lightningColor, target);
 
             float currentDamage = this.damage * Mathf.pow(1f - chainDamageFalloff, chain);
             Damage.collideLine(b, b.team, hitEffect, fromX, fromY,
@@ -109,7 +106,7 @@ public class ChainLightningBulletType extends BulletType {
             float targetX = b.x + Mathf.cosDeg(angle) * maxRange;
             float targetY = b.y + Mathf.sinDeg(angle) * maxRange;
 
-            chainEffect.at(b.x, b.y, chainZ, lightningColor, new Vec2(targetX, targetY));
+            Fx.chainLightning.at(b.x, b.y, 0f, lightningColor, new Vec2(targetX, targetY));
             Damage.collideLine(b, b.team, hitEffect, b.x, b.y, angle, maxRange, true, false);
         }
     }

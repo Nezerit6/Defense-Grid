@@ -5,14 +5,13 @@ import mindustry.entities.part.DrawPart;
 import mindustry.gen.Building;
 import mindustry.graphics.*;
 import mindustry.world.Block;
-import mindustry.world.blocks.defense.turrets.Turret;
 import mindustry.world.blocks.defense.turrets.Turret.TurretBuild;
 import mindustry.world.draw.DrawTurret;
 
-public class DrawPrismTurret extends DrawTurret{
+public class DrawEmptyTurret extends DrawTurret{
+
     @Override
     public void draw(Building build){
-        Turret turret = (Turret)build.block;
         TurretBuild tb = (TurretBuild)build;
 
         Draw.rect(base, build.x, build.y);
@@ -25,6 +24,11 @@ public class DrawPrismTurret extends DrawTurret{
             params.setRecoil(part.recoilIndex >= 0 && tb.curRecoils != null ? tb.curRecoils[part.recoilIndex] : tb.curRecoil);
             part.draw(params);
         }
+
+        drawExtra(tb);
+    }
+
+    public void drawExtra(TurretBuild build){
     }
 
     @Override

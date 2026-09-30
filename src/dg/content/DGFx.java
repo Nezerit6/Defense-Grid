@@ -26,7 +26,13 @@ public class DGFx{
     public static final Color
         cryo = Color.valueOf("afeeee"),
         cryoDark = Color.valueOf("6974c4"),
-        shatterColor = Color.valueOf("ea8878"),
+        pulseColor = Color.valueOf("f9a3c7"),
+        pulseDark = Color.valueOf("cb8ebf"),
+        voidColor = Color.valueOf("a86bff"),
+        voidDark = Color.valueOf("3a1d5c"),
+        strikeColor = Color.valueOf("ff5845"),
+        gold = Color.valueOf("ffd37f"),
+        goldDark = Color.valueOf("e8a04c"),
         smokeColor = Color.valueOf("6e7080"),
         dirt = Color.valueOf("5d5e68"),
         metal = Color.valueOf("989aa4"),
@@ -34,230 +40,161 @@ public class DGFx{
 
     public static final Effect
 
-    quakeSmoke = risingSmoke(7, 9f, 14f, 3.2f, Color.valueOf("8b8c95"), smokeColor, 70f),
-
-    frostPuff = risingSmoke(6, 7f, 10f, 2.4f, Color.white, cryo, 45f),
-
     customSmoke = new Effect(SmokeTestBlock.maxLifetime, 200f, e -> {
         if(e.data instanceof SmokeStyle) ((SmokeStyle)e.data).draw(e.x, e.y, e.rotation, e.time, e.id);
     }).layer(Layer.bullet - 1f),
 
-    chainArc = new Effect(20f, 400f, e -> {
-        if(!(e.data instanceof Position)) return;
-        Position p = (Position)e.data;
-        float tx = p.getX(), ty = p.getY(), dst = Mathf.dst(e.x, e.y, tx, ty);
-        int links = Mathf.clamp(Mathf.ceil(dst / 5f), 2, points.length / 2 - 1);
-        float bulge = Math.min(dst * 0.12f, 9f);
-        float nx = -(ty - e.y) / Math.max(dst, 0.01f), ny = (tx - e.x) / Math.max(dst, 0.01f);
-
-        rand.setSeed(e.id * 31L + (long)(e.time / 3f));
-        for(int i = 0; i <= links; i++){
-            float t = i / (float)links, off = i == 0 || i == links ? 0f : rand.range(2.4f), z = bulge * 4f * t * (1f - t) + e.rotation * (1f - t);
-            float wx = Mathf.lerp(e.x, tx, t) + nx * off, wy = Mathf.lerp(e.y, ty, t) + ny * off;
-            points[i * 2] = DGDraw3D.x(wx, z);
-            points[i * 2 + 1] = DGDraw3D.y(wy, z);
+    pulseShoot = new Effect(12f, 40f, e -> {
+        color(Color.white, pulseColor, e.fin());
+        for(int i : Mathf.signs){
+            Drawf.tri(e.x, e.y, 2.4f * e.fout(), 7f, e.rotation + 55f * i);
         }
-
-        float fout = e.fout(Interp.pow2In);
-        color(e.color, 0.3f * fout);
-        polyline(links, 4.5f * fout);
-        color(Color.white, e.color, e.fin());
-        polyline(links, 1.8f * fout + 0.2f);
-
-        for(int i = 1; i < links; i++){
-            if(!rand.chance(0.3f)) continue;
-            float px = points[i * 2], py = points[i * 2 + 1], ang = rand.random(360f), len = 2f + rand.random(4f);
-            float mx = px + trnsx(ang, len * 0.5f) + rand.range(1f), my = py + trnsy(ang, len * 0.5f) + rand.range(1f);
-            stroke(0.8f * fout);
-            line(px, py, mx, my);
-            line(mx, my, px + trnsx(ang, len), py + trnsy(ang, len));
-        }
-
-        Drawf.light(e.x, e.y, tx, ty, 18f, e.color, 0.55f * fout);
-    }).layer(Layer.bullet + 0.01f),
-
-    arcHit = new Effect(18f, 40f, e -> {
-        rand.setSeed(e.id);
-        for(int i = 0; i < 6; i++){
-            float ang = rand.random(360f), hs = 0.5f + rand.random(0.9f), vz = 0.6f + rand.random(1f);
-            float t = e.time, d = hs * t, z = Math.max(vz * t - gravity * t * t / 2f, 0f);
-            float t2 = Math.max(t - 2f, 0f), d2 = hs * t2, z2 = Math.max(vz * t2 - gravity * t2 * t2 / 2f, 0f);
-            color(Color.white, Pal.lancerLaser, e.fin());
-            stroke(0.9f * e.fout());
-            line(DGDraw3D.x(e.x + trnsx(ang, d2), z2), DGDraw3D.y(e.y + trnsy(ang, d2), z2), DGDraw3D.x(e.x + trnsx(ang, d), z), DGDraw3D.y(e.y + trnsy(ang, d), z));
-        }
-        e.scaled(8f, s -> {
-            color(Color.white, Pal.lancerLaser, s.fin());
-            stroke(1.2f * s.fout());
-            Lines.circle(e.x, e.y, 1f + 4f * s.finpow());
-        });
-        Drawf.light(e.x, e.y, 14f * e.fout(), Pal.lancerLaser, 0.6f);
+        Drawf.tri(e.x, e.y, 3f * e.fout(), 11f, e.rotation);
+        stroke(1.2f * e.fout());
+        Lines.circle(e.x, e.y, 1f + 5f * e.finpow());
+        Drawf.light(e.x, e.y, 16f * e.fout(), pulseColor, 0.7f);
     }),
 
-    quakeShoot = new Effect(18f, 80f, e -> {
-        Color c = e.color.equals(Color.white) ? Pal.lightOrange : e.color;
-
+    ricochet = new Effect(22f, 60f, e -> {
+        int bounce = e.data instanceof Integer ? (Integer)e.data : 1;
+        float power = 1f + bounce * 0.18f;
         e.scaled(10f, s -> {
-            color(Color.white, c, s.fin());
-            Drawf.tri(e.x, e.y, 6f * s.fout(), 22f * s.fout() + 4f, e.rotation);
-            Drawf.tri(e.x, e.y, 6f * s.fout(), 3f, e.rotation + 180f);
-            for(int i : Mathf.signs){
-                Drawf.tri(e.x, e.y, 3.5f * s.fout(), 10f * s.fout() + 2f, e.rotation + 78f * i);
-            }
-            Draw.blend(Blending.additive);
-            Fill.light(e.x, e.y, 16, 7f * s.fout(), Tmp.c1.set(c).a(0.8f * s.fout()), Tmp.c2.set(c).a(0f));
-            Draw.blend();
+            color(Color.white, pulseColor, s.fin());
+            stroke(1.6f * s.fout() * power);
+            Lines.circle(e.x, e.y, (2f + 7f * s.finpow()) * power);
+            Drawf.tri(e.x, e.y, 3f * s.fout() * power, 9f * power, e.rotation);
+            Drawf.tri(e.x, e.y, 3f * s.fout() * power, 4f * power, e.rotation + 180f);
         });
-
-        e.scaled(14f, s -> {
-            color(Color.white, c, s.fin());
-            stroke(2f * s.fout());
-            Lines.circle(e.x, e.y, 3f + 11f * s.finpow());
-        });
-
         rand.setSeed(e.id);
-        for(int i = 0; i < 7; i++){
-            float ang = e.rotation + rand.range(22f), hs = 1.2f + rand.random(1.6f), vz = 0.4f + rand.random(1.2f);
-            float t = e.time, d = hs * t, z = Math.max(vz * t - gravity * t * t / 2f, 0f);
-            color(Color.white, c, e.fin());
-            Fill.circle(DGDraw3D.x(e.x + trnsx(ang, d), z), DGDraw3D.y(e.y + trnsy(ang, d), z), 0.9f * e.fout() * DGDraw3D.scale(z));
+        for(int i = 0; i < 3 + bounce; i++){
+            float ang = rand.random(360f), hs = 0.6f + rand.random(1f), vz = 0.6f + rand.random(1.1f);
+            fly(e.time, hs, vz, 0f);
+            float x1 = DGDraw3D.x(e.x + trnsx(ang, flyDst), flyZ), y1 = DGDraw3D.y(e.y + trnsy(ang, flyDst), flyZ);
+            fly(Math.max(e.time - 2.5f, 0f), hs, vz, 0f);
+            float x2 = DGDraw3D.x(e.x + trnsx(ang, flyDst), flyZ), y2 = DGDraw3D.y(e.y + trnsy(ang, flyDst), flyZ);
+            color(Color.white, pulseColor, e.fin());
+            stroke(1f * e.fout());
+            line(x2, y2, x1, y1);
         }
-
-        Drawf.light(e.x, e.y, 38f * e.fout(), c, 0.8f);
-    }).layer(Layer.effect),
-
-    quakeCasing = casing(1.7f, 3.4f, 1f),
-
-    quakeBurst = new MultiEffect(
-        burst(shatterColor, dirt, 26f, 10, 5, 1f),
-        risingSmoke(8, 10f, 12f, 3f, Color.valueOf("8b8c95"), dirt, 80f, 180f, 0.4f)
-    ),
-
-    shrapnelHit = new Effect(14f, e -> {
-        Color c = e.color.equals(Color.white) ? shatterColor : e.color;
-        color(Color.white, c, e.fin());
-        stroke(0.9f * e.fout());
-        randLenVectors(e.id, 4, 1f + 7f * e.finpow(), e.rotation + 180f, 60f, (x, y) -> lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), 1f + 2.5f * e.fout()));
-        color(Color.lightGray, 0.5f * e.fout());
-        Fill.circle(e.x, e.y, 1.5f * e.fout());
+        Drawf.light(e.x, e.y, 20f * power * e.fout(), pulseColor, 0.7f);
     }),
 
-    glacierShoot = new MultiEffect(new WaveEffect(){{
-        colorFrom = Color.white;
-        colorTo = cryo;
-        sizeTo = 10f;
-        lifetime = 16f;
-        strokeFrom = 2f;
-    }}, new Effect(22f, e -> {
-        color(Color.white, cryo, e.fin());
-        randLenVectors(e.id, 7, 3f + 20f * e.finpow(), e.rotation, 35f, (x, y) -> {
-            float ang = Mathf.angle(x, y);
-            Drawf.tri(e.x + x, e.y + y, 2.2f * e.fout(), 5f * e.fout() + 1f, ang);
-            Drawf.tri(e.x + x, e.y + y, 2.2f * e.fout(), 2f * e.fout(), ang + 180f);
-        });
-        Drawf.light(e.x, e.y, 30f * e.fout(), cryo, 0.7f);
-    }), Fx.lancerLaserShootSmoke),
-
-    iceShatter = new MultiEffect(new Effect(60f, 80f, e -> {
-        e.scaled(20f, s -> {
-            color(Color.white, cryo, s.fin());
-            stroke(1.6f * s.fout());
-            Lines.circle(e.x, e.y, 2f + 11f * s.finpow());
-            rand.setSeed(e.id + 7);
-            for(int i = 0; i < 6; i++){
-                float ang = rand.random(360f), len = (4f + rand.random(6f)) * s.finpow();
-                lineAngle(e.x, e.y, ang, len);
-            }
-        });
-
-        shards(e, 8, 0.5f, 0.9f, 1.3f, 1.1f, 1.2f, 3, Color.white, cryo, cryoDark, 360f, 0.4f);
-
-        rand.setSeed(e.id + 3);
-        for(int i = 0; i < 4; i++){
-            float gx = e.x + rand.range(8f), gy = e.y + rand.range(8f), g = Mathf.slope(Mathf.clamp(e.fin() * 1.6f - rand.random(0.5f)));
-            color(Color.white, g);
-            for(int j = 0; j < 4; j++) Drawf.tri(gx, gy, 0.8f * g, 2.6f * g, j * 90f + 45f);
+    glaiveThrow = new Effect(16f, 60f, e -> {
+        color(Color.white, metal, e.fin());
+        stroke(1.4f * e.fout());
+        for(int i : Mathf.signs){
+            Lines.arc(e.x, e.y, 4f + 6f * e.finpow(), 0.3f, e.rotation - 54f + 90f * i * 0.3f);
         }
-
-        Drawf.light(e.x, e.y, 24f * e.fout(), cryo, 0.6f);
-    }), risingSmoke(6, 7f, 10f, 2.4f, Color.white, cryo, 50f, 180f, 0.3f)),
-
-    hornetLaunch = new Effect(26f, 100f, e -> {
-        float back = e.rotation + 180f;
-        e.scaled(14f, s -> {
-            color(Pal.missileYellow, Pal.missileYellowBack, s.fin());
-            Drawf.tri(e.x, e.y, 3.5f * s.fout(), 11f * s.fout() + 2f, back);
-            for(int i : Mathf.signs){
-                Drawf.tri(e.x, e.y, 2f * s.fout(), 6f * s.fout() + 1f, back + 28f * i);
-            }
-            color(Color.white, Pal.missileYellow, s.fin());
-            Drawf.tri(e.x, e.y, 2f * s.fout(), 4f * s.fout() + 1f, e.rotation);
-
-            Draw.blend(Blending.additive);
-            Fill.light(e.x, e.y, 16, 4.5f * s.fout(), Tmp.c1.set(Pal.missileYellow).a(0.8f * s.fout()), Tmp.c2.set(Pal.missileYellowBack).a(0f));
-            Draw.blend();
-        });
-
-        e.scaled(18f, s -> {
-            color(Pal.missileYellow, Pal.missileYellowBack, s.fin());
-            stroke(1.2f * s.fout());
-            Lines.circle(e.x, e.y, 2f + 6f * s.finpow());
-        });
-
-        rand.setSeed(e.id);
-        for(int i = 0; i < 4; i++){
-            float ang = back + rand.range(35f), hs = 1f + rand.random(1.8f), vz = 0.3f + rand.random(1f);
-            float t = e.time, d = hs * t, z = Math.max(vz * t - gravity * t * t / 2f, 0f);
-            color(Pal.missileYellow, Pal.missileYellowBack, e.fin());
-            Fill.circle(DGDraw3D.x(e.x + trnsx(ang, d), z), DGDraw3D.y(e.y + trnsy(ang, d), z), 1f * e.fout() * DGDraw3D.scale(z));
-        }
-
-        Drawf.light(e.x, e.y, 22f * e.fout(), Pal.missileYellowBack, 0.9f);
+        randLenVectors(e.id, 5, 2f + 10f * e.finpow(), e.rotation, 30f, (x, y) -> lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), 1f + 3f * e.fout()));
     }),
 
-    shellSmoke = new Effect(40f, 60f, e -> {
-        float z = e.rotation + 3f * e.finpow(), sc = DGDraw3D.scale(z);
-        Tmp.c1.set(e.color).a(0.45f * e.fout());
-        Fill.light(DGDraw3D.x(e.x, z), DGDraw3D.y(e.y, z), 10, (0.8f + 2.2f * e.finpow()) * sc, Tmp.c1, Tmp.c2.set(e.color).a(0f));
-    }).layer(Layer.bullet - 1f),
-
-    frostMote = new Effect(34f, 60f, e -> {
+    glaiveHit = new Effect(16f, 40f, e -> {
         rand.setSeed(e.id);
+        for(int i = 0; i < 5; i++){
+            float ang = e.rotation + rand.range(70f), hs = 0.8f + rand.random(1.4f), vz = 0.4f + rand.random(1f);
+            fly(e.time, hs, vz, 0f);
+            float x1 = DGDraw3D.x(e.x + trnsx(ang, flyDst), flyZ), y1 = DGDraw3D.y(e.y + trnsy(ang, flyDst), flyZ);
+            fly(Math.max(e.time - 2f, 0f), hs, vz, 0f);
+            float x2 = DGDraw3D.x(e.x + trnsx(ang, flyDst), flyZ), y2 = DGDraw3D.y(e.y + trnsy(ang, flyDst), flyZ);
+            color(Color.white, Pal.lightOrange, e.fin());
+            stroke(0.9f * e.fout());
+            line(x2, y2, x1, y1);
+        }
+    }),
+
+    glaiveCatch = new Effect(20f, 50f, e -> {
+        color(Color.white, e.color, e.fin());
+        stroke(2f * e.fout());
+        Lines.circle(e.x, e.y, 3f + 9f * e.finpow());
+        for(int i = 0; i < 4; i++){
+            Drawf.tri(e.x, e.y, 2.2f * e.fout(), 8f * e.fout(), i * 90f + 45f + e.fin() * 60f);
+        }
+        Drawf.light(e.x, e.y, 22f * e.fout(), e.color, 0.6f);
+    }),
+
+    singularityCharge = new Effect(50f, 80f, e -> {
+        rand.setSeed(e.id);
+        for(int i = 0; i < 14; i++){
+            float start = rand.random(0.4f), f = Mathf.clamp((e.fin() - start) / (1f - start));
+            if(f <= 0f) continue;
+            float ang = rand.random(360f) + f * 200f, len = (1f - Interp.pow2In.apply(f)) * rand.random(14f, 26f);
+            float z = 3f + rand.range(4f) * (1f - f);
+            color(voidColor, Color.white, f);
+            Fill.circle(DGDraw3D.x(e.x + trnsx(ang, len), z), DGDraw3D.y(e.y + trnsy(ang, len), z), 1.1f * Mathf.slope(f) * DGDraw3D.scale(z));
+        }
+        color(voidDark, 0.8f * e.fin());
+        Fill.circle(e.x, e.y, 3f * e.fin());
+        Drawf.light(e.x, e.y, 30f * e.fin(), voidColor, 0.7f);
+    }),
+
+    singularityCollapse = new MultiEffect(new Effect(50f, 160f, e -> {
+        e.scaled(12f, s -> {
+            color(Color.white, voidColor, s.fin());
+            stroke(3f * s.fin());
+            Lines.circle(e.x, e.y, 40f * (1f - s.finpow()));
+        });
+        e.scaled(34f, s -> {
+            float f = Mathf.clamp((s.fin() - 0.3f) / 0.7f);
+            if(f <= 0f) return;
+            color(voidColor, voidDark, f);
+            stroke(4f * (1f - f));
+            Lines.circle(e.x, e.y, 4f + 52f * Interp.pow3Out.apply(f));
+            Draw.blend(Blending.additive);
+            Fill.light(e.x, e.y, 20, 16f * (1f - f), Tmp.c1.set(Color.white).lerp(voidColor, f).a(0.9f * (1f - f)), Tmp.c2.set(voidColor).a(0f));
+            Draw.blend();
+        });
+        shards(e, 12, 0.5f, 1.2f, 1.2f, 1.3f, 1.2f, 4, Color.valueOf("c9a8ff"), voidColor, voidDark, 360f, 0.3f);
+        embers(e, 10, 0.8f, 1.2f, 1.2f, 1.5f, voidColor);
+        Drawf.light(e.x, e.y, 80f * e.fout(), voidColor, 0.9f);
+    }), risingSmoke(10, 14f, 18f, 3.6f, Color.valueOf("7a5aa8"), voidDark, 110f, 180f, 0.4f)),
+
+    markerShoot = new Effect(10f, 40f, e -> {
+        color(Color.white, strikeColor, e.fin());
+        Drawf.tri(e.x, e.y, 2.4f * e.fout(), 10f, e.rotation);
+        Drawf.tri(e.x, e.y, 2.4f * e.fout(), 3f, e.rotation + 180f);
+        Drawf.light(e.x, e.y, 12f * e.fout(), strikeColor, 0.6f);
+    }),
+
+    markerPing = new Effect(30f, 60f, e -> {
+        color(strikeColor);
         for(int i = 0; i < 2; i++){
-            float z = e.rotation - 2f * e.fin() + rand.range(1f), sc = DGDraw3D.scale(z);
-            float x = e.x + rand.range(2.5f), y = e.y + rand.range(2.5f);
-            Tmp.c1.set(Color.white).lerp(e.color, e.fin()).a(0.6f * e.fout());
-            Fill.light(DGDraw3D.x(x, z), DGDraw3D.y(y, z), 8, (0.6f + 1.8f * e.fin()) * sc, Tmp.c1, Tmp.c2.set(e.color).a(0f));
+            float f = Mathf.clamp(e.fin() * 1.5f - i * 0.4f);
+            stroke(1.5f * (1f - f));
+            Lines.circle(e.x, e.y, 2f + 14f * f);
         }
-    }).layer(Layer.bullet - 1f),
+    }),
 
-    missileSmoke = new Effect(50f, 60f, e -> {
-        float z = 1.5f + 5f * e.finpow(), sc = DGDraw3D.scale(z);
-        Tmp.c1.set(Color.white).lerp(e.color, Mathf.clamp(e.fin() * 3f)).a(0.55f * e.fout());
-        Fill.light(DGDraw3D.x(e.x, z), DGDraw3D.y(e.y, z), 10, (0.7f + 2f * e.finpow()) * sc, Tmp.c1, Tmp.c2.set(e.color).a(0f));
-    }).layer(Layer.bullet - 1f),
-
-    quakeBurstBlast = new MultiEffect(
-        burst(Pal.missileYellowBack, dirt, 40f, 16, 12, 1.6f),
-        fireTongues(Pal.missileYellow, Pal.missileYellowBack, 40f),
-        risingSmoke(14, 16f, 30f, 5f, Color.valueOf("8b8c95"), Color.valueOf("4d4e58"), 150f, 180f, 0.45f)
+    strikeBoom = new MultiEffect(
+        burst(Pal.missileYellowBack, dirt, 48f, 20, 16, 2f),
+        fireTongues(Pal.missileYellow, strikeColor, 48f),
+        risingSmoke(16, 18f, 38f, 5.5f, Color.valueOf("8b8c95"), Color.valueOf("3d3e46"), 170f, 180f, 0.45f)
     ),
 
-    hornetPop = new MultiEffect(
-        burst(Pal.missileYellowBack, dirt, 16f, 5, 6, 0.8f),
-        risingSmoke(6, 7f, 10f, 2.4f, Color.valueOf("a5a6ad"), smokeColor, 60f, 180f, 0.4f)
+    strikeBoomFire = new MultiEffect(
+        burst(Pal.lightOrange, Color.valueOf("4d4e58"), 44f, 14, 22, 1.8f),
+        fireTongues(Pal.lightishOrange, Pal.lightOrange, 52f),
+        fireTongues(Pal.lightOrange, strikeColor, 36f),
+        risingSmoke(16, 18f, 34f, 5f, Color.valueOf("6e7080"), Color.valueOf("2c2d38"), 170f, 180f, 0.45f)
     ),
 
-    glacierBurst = new MultiEffect(
-        new WaveEffect(){{
-            colorFrom = Color.white;
-            colorTo = cryo;
-            sizeTo = 30f;
-            lifetime = 22f;
-            strokeFrom = 3f;
-        }},
-        iceShatter,
-        risingSmoke(10, 12f, 16f, 3.4f, Color.white, cryo, 90f, 180f, 0.4f)
+    capacitorStack = new Effect(18f, 40f, e -> {
+        color(Color.white, gold, e.fin());
+        stroke(1.2f * e.fout());
+        Lines.circle(e.x, e.y, 1f + 5f * e.finpow());
+        Drawf.light(e.x, e.y, 12f * e.fout(), gold, 0.6f);
+    }),
+
+    capacitorShoot = new Effect(14f, 40f, e -> {
+        color(Color.white, gold, e.fin());
+        stroke(1.4f * e.fout());
+        Lines.circle(e.x, e.y, 1f + 6f * e.finpow());
+        randLenVectors(e.id, 4, 1f + 8f * e.finpow(), e.rotation, 40f, (x, y) -> lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), 1f + 2.5f * e.fout()));
+        Drawf.light(e.x, e.y, 16f * e.fout(), gold, 0.7f);
+    }),
+
+    capacitorHit = new MultiEffect(
+        burst(gold, dirt, 12f, 3, 6, 0.6f),
+        risingSmoke(4, 5f, 7f, 1.8f, Color.valueOf("fff0c8"), goldDark, 40f, 180f, 0.3f)
     );
 
     public static Effect risingSmoke(int count, float spread, float height, float size, Color from, Color to, float lifetime){
