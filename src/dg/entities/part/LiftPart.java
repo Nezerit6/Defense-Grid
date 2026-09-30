@@ -7,14 +7,10 @@ import dg.graphics.DGDraw3D;
 import mindustry.entities.part.*;
 import mindustry.graphics.*;
 
-/** A {@link RegionPart} that can be lifted off the turret. Lifted parts are drawn in perspective and cast a shadow below them. */
 public class LiftPart extends RegionPart{
-    /** Height of the part when {@link #liftProgress} is 0. */
     public float height = 0f;
-    /** Height added when {@link #liftProgress} is 1. */
     public float lift = 0f;
     public PartProgress liftProgress = PartProgress.warmup;
-    /** Opacity of the shadow cast by this part. */
     public float shadowAlpha = 1f;
 
     public LiftPart(String region){
@@ -71,7 +67,6 @@ public class LiftPart extends RegionPart{
 
             Draw.xscl *= sign;
 
-            //shadow on whatever is below; drawn first at the same layer so it lands on top of the turret body
             if(drawRegion && shadowAlpha > 0f && h > 0.01f){
                 TextureRegion shadowRegion = outlines[Math.min(i, outlines.length - 1)].found() ? outlines[Math.min(i, outlines.length - 1)] : region;
                 Draw.z(prevZ);

@@ -8,22 +8,17 @@ import dg.graphics.DGDraw3D;
 import mindustry.entities.part.DrawPart;
 import mindustry.graphics.*;
 
-/** Particles (mist, smoke, sparks) that float up from the turret and drift in perspective as they rise. */
 public class RisePart extends DrawPart{
     public float x, y;
-    /** Radius of the area particles appear in. */
     public float spread = 2f;
     public boolean mirror = false;
     public int particles = 6;
     public float lifetime = 60f;
-    /** Height particles reach at the end of their life. */
     public float rise = 8f;
-    /** Sideways travel over the lifetime. */
     public float drift = 2f;
     public float size = 1.2f, sizeTo = 0f;
     public Color color = Color.white.cpy(), colorTo = Color.white.cpy();
     public float alpha = 0.7f;
-    /** Controls how many particles are visible. */
     public PartProgress progress = PartProgress.warmup;
     public boolean additive = false;
     public float layer = Layer.effect - 1f;
@@ -52,7 +47,6 @@ public class RisePart extends DrawPart{
                 float fin = (time % lifetime) / lifetime;
                 long cseed = seed + cycle * 6151L;
 
-                //fewer particles at low progress
                 if(Mathf.randomSeed(cseed + 1) > prog) continue;
 
                 Tmp.v1.trns(Mathf.randomSeed(cseed + 2, 360f), Mathf.randomSeed(cseed + 3, spread));

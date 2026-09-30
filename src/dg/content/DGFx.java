@@ -17,16 +17,10 @@ import static arc.graphics.g2d.Draw.*;
 import static arc.graphics.g2d.Lines.*;
 import static arc.math.Angles.*;
 
-/**
- * Effects of the Defense Grid turrets. Most of them live in pseudo-3D: debris and casings fly on real
- * ballistic arcs, bounce and cast shadows, smoke rises in perspective and lightning bows up between targets.
- */
 public class DGFx{
     private static final Rand rand = new Rand();
     private static final float[] points = new float[512];
-    /** Gravity for everything thrown into the air, world units per tick squared. */
     private static final float gravity = 0.12f;
-    /** Result of {@link #fly}. */
     private static float flyDst, flyZ;
 
     public static final Color
@@ -40,48 +34,14 @@ public class DGFx{
 
     public static final Effect
 
-    //region smoke
-
-    shatterSmoke = risingSmoke(7, 9f, 14f, 3.2f, Color.valueOf("8b8c95"), smokeColor, 70f),
-
-    arcflashSmoke = risingSmoke(9, 12f, 18f, 3.4f, Color.valueOf("a5a6ad"), smokeColor, 90f),
+    quakeSmoke = risingSmoke(7, 9f, 14f, 3.2f, Color.valueOf("8b8c95"), smokeColor, 70f),
 
     frostPuff = risingSmoke(6, 7f, 10f, 2.4f, Color.white, cryo, 45f),
 
-    /** Smoke drawn with the {@link SmokeStyle} passed as effect data; used by the smoke test block. */
     customSmoke = new Effect(SmokeTestBlock.maxLifetime, 200f, e -> {
         if(e.data instanceof SmokeStyle) ((SmokeStyle)e.data).draw(e.x, e.y, e.rotation, e.time, e.id);
     }).layer(Layer.bullet - 1f),
 
-    //endregion
-    //region arclet
-
-    arcletShoot = new Effect(14f, 40f, e -> {
-        //a few short crackles jumping out of the muzzle
-        rand.setSeed(e.id);
-        for(int i = 0; i < 4; i++){
-            float ang = e.rotation + rand.range(40f), len = 3f + rand.random(5f) * e.finpow() + 2f;
-            float x1 = e.x, y1 = e.y;
-            for(int j = 1; j <= 3; j++){
-                float l = len * j / 3f;
-                float x2 = e.x + trnsx(ang, l) + rand.range(1f), y2 = e.y + trnsy(ang, l) + rand.range(1f);
-                color(Pal.lancerLaser, 0.4f * e.fout());
-                stroke(1.8f * e.fout());
-                line(x1, y1, x2, y2);
-                color(Color.white, e.fout());
-                stroke(0.7f * e.fout());
-                line(x1, y1, x2, y2);
-                x1 = x2;
-                y1 = y2;
-            }
-        }
-        Draw.blend(Blending.additive);
-        Fill.light(e.x, e.y, 12, 5f * e.fout(), Tmp.c1.set(Pal.lancerLaser).a(0.7f * e.fout()), Tmp.c2.set(Pal.lancerLaser).a(0f));
-        Draw.blend();
-        Drawf.light(e.x, e.y, 18f * e.fout(), Pal.lancerLaser, 0.7f);
-    }),
-
-    /** Lightning bolt between two points that bows up into the air. The target position is the effect data. */
     chainArc = new Effect(20f, 400f, e -> {
         if(!(e.data instanceof Position)) return;
         Position p = (Position)e.data;
@@ -90,10 +50,9 @@ public class DGFx{
         float bulge = Math.min(dst * 0.12f, 9f);
         float nx = -(ty - e.y) / Math.max(dst, 0.01f), ny = (tx - e.x) / Math.max(dst, 0.01f);
 
-        //the bolt flickers into a new shape every few ticks
         rand.setSeed(e.id * 31L + (long)(e.time / 3f));
         for(int i = 0; i <= links; i++){
-            float t = i / (float)links, off = i == 0 || i == links ? 0f : rand.range(2.4f), z = bulge * 4f * t * (1f - t);
+            float t = i / (float)links, off = i == 0 || i == links ? 0f : rand.range(2.4f), z = bulge * 4f * t * (1f - t) + e.rotation * (1f - t);
             float wx = Mathf.lerp(e.x, tx, t) + nx * off, wy = Mathf.lerp(e.y, ty, t) + ny * off;
             points[i * 2] = DGDraw3D.x(wx, z);
             points[i * 2 + 1] = DGDraw3D.y(wy, z);
@@ -105,7 +64,6 @@ public class DGFx{
         color(Color.white, e.color, e.fin());
         polyline(links, 1.8f * fout + 0.2f);
 
-        //forks
         for(int i = 1; i < links; i++){
             if(!rand.chance(0.3f)) continue;
             float px = points[i * 2], py = points[i * 2 + 1], ang = rand.random(360f), len = 2f + rand.random(4f);
@@ -119,7 +77,6 @@ public class DGFx{
     }).layer(Layer.bullet + 0.01f),
 
     arcHit = new Effect(18f, 40f, e -> {
-        //sparks popping up off whatever got shocked
         rand.setSeed(e.id);
         for(int i = 0; i < 6; i++){
             float ang = rand.random(360f), hs = 0.5f + rand.random(0.9f), vz = 0.6f + rand.random(1f);
@@ -137,27 +94,9 @@ public class DGFx{
         Drawf.light(e.x, e.y, 14f * e.fout(), Pal.lancerLaser, 0.6f);
     }),
 
-    //endregion
-    //region needler
-
-    needleShoot = new Effect(9f, e -> {
-        color(Color.white, Pal.lightOrange, e.fin());
-        for(int i : Mathf.signs){
-            Drawf.tri(e.x, e.y, 2.2f * e.fout(), 6f, e.rotation + 25f * i);
-        }
-        Drawf.tri(e.x, e.y, 2.6f * e.fout(), 9f, e.rotation);
-        Drawf.light(e.x, e.y, 12f * e.fout(), Pal.lightOrange, 0.5f);
-    }),
-
-    needleCasing = casing(1f, 1.9f, 0.8f),
-
-    //endregion
-    //region shatter
-
-    shatterShoot = new Effect(18f, 80f, e -> {
+    quakeShoot = new Effect(18f, 80f, e -> {
         Color c = e.color.equals(Color.white) ? Pal.lightOrange : e.color;
 
-        //muzzle blast: a long tongue forward and two side vents
         e.scaled(10f, s -> {
             color(Color.white, c, s.fin());
             Drawf.tri(e.x, e.y, 6f * s.fout(), 22f * s.fout() + 4f, e.rotation);
@@ -170,14 +109,12 @@ public class DGFx{
             Draw.blend();
         });
 
-        //pressure ring on the ground
         e.scaled(14f, s -> {
             color(Color.white, c, s.fin());
             stroke(2f * s.fout());
             Lines.circle(e.x, e.y, 3f + 11f * s.finpow());
         });
 
-        //burning powder flakes thrown up out of the barrel
         rand.setSeed(e.id);
         for(int i = 0; i < 7; i++){
             float ang = e.rotation + rand.range(22f), hs = 1.2f + rand.random(1.6f), vz = 0.4f + rand.random(1.2f);
@@ -189,17 +126,11 @@ public class DGFx{
         Drawf.light(e.x, e.y, 38f * e.fout(), c, 0.8f);
     }).layer(Layer.effect),
 
-    shatterCasing = casing(1.7f, 3.4f, 1f),
+    quakeCasing = casing(1.7f, 3.4f, 1f),
 
-    shatterBurst = new MultiEffect(
+    quakeBurst = new MultiEffect(
         burst(shatterColor, dirt, 26f, 10, 5, 1f),
         risingSmoke(8, 10f, 12f, 3f, Color.valueOf("8b8c95"), dirt, 80f, 180f, 0.4f)
-    ),
-
-    shatterBurstFire = new MultiEffect(
-        burst(Pal.lightOrange, Color.valueOf("4d4e58"), 30f, 9, 9, 1.2f),
-        fireTongues(Pal.lightishOrange, Pal.lightOrange, 30f),
-        risingSmoke(9, 11f, 16f, 3.2f, Color.valueOf("6e7080"), Color.valueOf("3d3e46"), 95f, 180f, 0.4f)
     ),
 
     shrapnelHit = new Effect(14f, e -> {
@@ -211,17 +142,13 @@ public class DGFx{
         Fill.circle(e.x, e.y, 1.5f * e.fout());
     }),
 
-    //endregion
-    //region cryolance
-
-    cryoShoot = new MultiEffect(new WaveEffect(){{
+    glacierShoot = new MultiEffect(new WaveEffect(){{
         colorFrom = Color.white;
         colorTo = cryo;
         sizeTo = 10f;
         lifetime = 16f;
         strokeFrom = 2f;
     }}, new Effect(22f, e -> {
-        //ice shards bursting forward
         color(Color.white, cryo, e.fin());
         randLenVectors(e.id, 7, 3f + 20f * e.finpow(), e.rotation, 35f, (x, y) -> {
             float ang = Mathf.angle(x, y);
@@ -231,8 +158,7 @@ public class DGFx{
         Drawf.light(e.x, e.y, 30f * e.fout(), cryo, 0.7f);
     }), Fx.lancerLaserShootSmoke),
 
-    cryoHit = new MultiEffect(new Effect(60f, 80f, e -> {
-        //frost spreading over the ground
+    iceShatter = new MultiEffect(new Effect(60f, 80f, e -> {
         e.scaled(20f, s -> {
             color(Color.white, cryo, s.fin());
             stroke(1.6f * s.fout());
@@ -244,10 +170,8 @@ public class DGFx{
             }
         });
 
-        //ice shards thrown up; they tumble, bounce and melt away
         shards(e, 8, 0.5f, 0.9f, 1.3f, 1.1f, 1.2f, 3, Color.white, cryo, cryoDark, 360f, 0.4f);
 
-        //glints
         rand.setSeed(e.id + 3);
         for(int i = 0; i < 4; i++){
             float gx = e.x + rand.range(8f), gy = e.y + rand.range(8f), g = Mathf.slope(Mathf.clamp(e.fin() * 1.6f - rand.random(0.5f)));
@@ -258,53 +182,84 @@ public class DGFx{
         Drawf.light(e.x, e.y, 24f * e.fout(), cryo, 0.6f);
     }), risingSmoke(6, 7f, 10f, 2.4f, Color.white, cryo, 50f, 180f, 0.3f)),
 
-    //endregion
-    //region arcflash
-
-    arcflashLaunch = new Effect(26f, 100f, e -> {
-        //backblast out of the launcher
+    hornetLaunch = new Effect(26f, 100f, e -> {
         float back = e.rotation + 180f;
         e.scaled(14f, s -> {
             color(Pal.missileYellow, Pal.missileYellowBack, s.fin());
-            Drawf.tri(e.x, e.y, 7f * s.fout(), 26f * s.fout() + 3f, back);
+            Drawf.tri(e.x, e.y, 3.5f * s.fout(), 11f * s.fout() + 2f, back);
             for(int i : Mathf.signs){
-                Drawf.tri(e.x, e.y, 4f * s.fout(), 14f * s.fout() + 2f, back + 28f * i);
+                Drawf.tri(e.x, e.y, 2f * s.fout(), 6f * s.fout() + 1f, back + 28f * i);
             }
             color(Color.white, Pal.missileYellow, s.fin());
-            Drawf.tri(e.x, e.y, 4f * s.fout(), 8f * s.fout() + 2f, e.rotation);
+            Drawf.tri(e.x, e.y, 2f * s.fout(), 4f * s.fout() + 1f, e.rotation);
 
             Draw.blend(Blending.additive);
-            Fill.light(e.x, e.y, 16, 9f * s.fout(), Tmp.c1.set(Pal.missileYellow).a(0.8f * s.fout()), Tmp.c2.set(Pal.missileYellowBack).a(0f));
+            Fill.light(e.x, e.y, 16, 4.5f * s.fout(), Tmp.c1.set(Pal.missileYellow).a(0.8f * s.fout()), Tmp.c2.set(Pal.missileYellowBack).a(0f));
             Draw.blend();
         });
 
         e.scaled(18f, s -> {
             color(Pal.missileYellow, Pal.missileYellowBack, s.fin());
-            stroke(2.4f * s.fout());
-            Lines.circle(e.x, e.y, 4f + 12f * s.finpow());
+            stroke(1.2f * s.fout());
+            Lines.circle(e.x, e.y, 2f + 6f * s.finpow());
         });
 
         rand.setSeed(e.id);
-        for(int i = 0; i < 9; i++){
+        for(int i = 0; i < 4; i++){
             float ang = back + rand.range(35f), hs = 1f + rand.random(1.8f), vz = 0.3f + rand.random(1f);
             float t = e.time, d = hs * t, z = Math.max(vz * t - gravity * t * t / 2f, 0f);
             color(Pal.missileYellow, Pal.missileYellowBack, e.fin());
             Fill.circle(DGDraw3D.x(e.x + trnsx(ang, d), z), DGDraw3D.y(e.y + trnsy(ang, d), z), 1f * e.fout() * DGDraw3D.scale(z));
         }
 
-        Drawf.light(e.x, e.y, 45f * e.fout(), Pal.missileYellowBack, 0.9f);
+        Drawf.light(e.x, e.y, 22f * e.fout(), Pal.missileYellowBack, 0.9f);
     }),
 
-    arcflashBoom = new MultiEffect(
-        burst(Pal.missileYellowBack, dirt, 34f, 14, 10, 1.5f),
-        fireTongues(Pal.missileYellow, Pal.missileYellowBack, 34f),
+    shellSmoke = new Effect(40f, 60f, e -> {
+        float z = e.rotation + 3f * e.finpow(), sc = DGDraw3D.scale(z);
+        Tmp.c1.set(e.color).a(0.45f * e.fout());
+        Fill.light(DGDraw3D.x(e.x, z), DGDraw3D.y(e.y, z), 10, (0.8f + 2.2f * e.finpow()) * sc, Tmp.c1, Tmp.c2.set(e.color).a(0f));
+    }).layer(Layer.bullet - 1f),
+
+    frostMote = new Effect(34f, 60f, e -> {
+        rand.setSeed(e.id);
+        for(int i = 0; i < 2; i++){
+            float z = e.rotation - 2f * e.fin() + rand.range(1f), sc = DGDraw3D.scale(z);
+            float x = e.x + rand.range(2.5f), y = e.y + rand.range(2.5f);
+            Tmp.c1.set(Color.white).lerp(e.color, e.fin()).a(0.6f * e.fout());
+            Fill.light(DGDraw3D.x(x, z), DGDraw3D.y(y, z), 8, (0.6f + 1.8f * e.fin()) * sc, Tmp.c1, Tmp.c2.set(e.color).a(0f));
+        }
+    }).layer(Layer.bullet - 1f),
+
+    missileSmoke = new Effect(50f, 60f, e -> {
+        float z = 1.5f + 5f * e.finpow(), sc = DGDraw3D.scale(z);
+        Tmp.c1.set(Color.white).lerp(e.color, Mathf.clamp(e.fin() * 3f)).a(0.55f * e.fout());
+        Fill.light(DGDraw3D.x(e.x, z), DGDraw3D.y(e.y, z), 10, (0.7f + 2f * e.finpow()) * sc, Tmp.c1, Tmp.c2.set(e.color).a(0f));
+    }).layer(Layer.bullet - 1f),
+
+    quakeBurstBlast = new MultiEffect(
+        burst(Pal.missileYellowBack, dirt, 40f, 16, 12, 1.6f),
+        fireTongues(Pal.missileYellow, Pal.missileYellowBack, 40f),
         risingSmoke(14, 16f, 30f, 5f, Color.valueOf("8b8c95"), Color.valueOf("4d4e58"), 150f, 180f, 0.45f)
+    ),
+
+    hornetPop = new MultiEffect(
+        burst(Pal.missileYellowBack, dirt, 16f, 5, 6, 0.8f),
+        risingSmoke(6, 7f, 10f, 2.4f, Color.valueOf("a5a6ad"), smokeColor, 60f, 180f, 0.4f)
+    ),
+
+    glacierBurst = new MultiEffect(
+        new WaveEffect(){{
+            colorFrom = Color.white;
+            colorTo = cryo;
+            sizeTo = 30f;
+            lifetime = 22f;
+            strokeFrom = 3f;
+        }},
+        iceShatter,
+        risingSmoke(10, 12f, 16f, 3.4f, Color.white, cryo, 90f, 180f, 0.4f)
     );
 
-    //endregion
-    //region builders
-
-    /** Smoke that billows up from the ground; the effect rotation is the direction it drifts in. */
     public static Effect risingSmoke(int count, float spread, float height, float size, Color from, Color to, float lifetime){
         return risingSmoke(count, spread, height, size, from, to, lifetime, 70f, 0f);
     }
@@ -316,22 +271,13 @@ public class DGFx{
         return new Effect(lifetime, 150f, e -> style.draw(e.x, e.y, e.rotation, e.time, e.id)).layer(Layer.bullet - 1f);
     }
 
-    /**
-     * Ground explosion: flash, fireball, shock ring, dirt chunks and glowing embers thrown into the air.
-     * @param radius radius of the shock ring
-     * @param chunks dirt chunks
-     * @param embers glowing embers
-     * @param power scales how hard things are thrown
-     */
     public static Effect burst(Color glow, Color debris, float radius, int chunks, int embers, float power){
         return new Effect(70f, radius * 4f, e -> {
-            //flash
             e.scaled(7f, s -> {
                 color(Color.white, s.fout());
                 Fill.circle(e.x, e.y, radius * 0.45f * s.fout());
             });
 
-            //fireball rising off the ground
             e.scaled(28f, s -> {
                 float z = 5f * power * s.finpow(), sc = DGDraw3D.scale(z);
                 Draw.blend(Blending.additive);
@@ -340,7 +286,6 @@ public class DGFx{
                 Draw.blend();
             });
 
-            //shock ring, then a slower dust ring
             e.scaled(16f, s -> {
                 color(Color.white, glow, s.fin());
                 stroke(2.8f * s.fout());
@@ -359,7 +304,6 @@ public class DGFx{
         });
     }
 
-    /** Flames licking up out of an explosion. */
     public static Effect fireTongues(Color from, Color to, float radius){
         return new Effect(34f, radius * 3f, e -> {
             rand.setSeed(e.id + 11);
@@ -376,10 +320,8 @@ public class DGFx{
         }).layer(Layer.effect + 0.01f);
     }
 
-    /** Shell casing ejected to the side of the turret, tumbling in the air and bouncing on the ground. */
     public static Effect casing(float width, float length, float power){
         return new Effect(110f, 60f, e -> {
-            //vanilla passes the side as the sign of the rotation
             float side = -Mathf.sign(e.rotation), rot = Math.abs(e.rotation);
             rand.setSeed(e.id);
             float ang = rot + side * (95f + rand.range(15f)), hs = (0.45f + rand.random(0.25f)) * power, vz = (1.2f + rand.random(0.5f)) * power;
@@ -402,14 +344,6 @@ public class DGFx{
         });
     }
 
-    //endregion
-    //region helpers
-
-    /**
-     * Pieces thrown into the air on ballistic arcs. They spin, bounce once, cast shadows and fade out.
-     * @param hs horizontal speed range, min + random
-     * @param vz vertical speed range, min + random
-     */
     static void shards(EffectContainer e, int count, float hsMin, float hsRand, float vzMin, float vzRand, float size, int sides,
                        Color light, Color base, Color dark, float cone, float bounce){
         rand.setSeed(e.id + 101);
@@ -428,7 +362,6 @@ public class DGFx{
 
             z(Layer.flyingUnitLow - 1f);
             float px = DGDraw3D.x(x, z), py = DGDraw3D.y(y, z), rad = s * sc;
-            //dark side, lit side
             color(dark, a);
             Fill.poly(px, py, sides, rad, r);
             if(stretch > 1f) Drawf.tri(px, py, rad * 1.2f, rad * stretch * 1.6f, r);
@@ -438,7 +371,6 @@ public class DGFx{
         color();
     }
 
-    /** Glowing sparks thrown into the air, leaving short streaks behind them. */
     static void embers(EffectContainer e, int count, float hsMin, float hsRand, float vzMin, float vzRand, Color glow){
         rand.setSeed(e.id + 202);
         z(Layer.effect);
@@ -459,10 +391,6 @@ public class DGFx{
         color();
     }
 
-    /**
-     * Ballistic flight with one bounce and ground friction. Writes the travelled distance and height to {@link #flyDst} and {@link #flyZ}.
-     * @return time spent in the air, for spinning
-     */
     static float fly(float t, float hs, float vz, float bounce){
         float t1 = 2f * vz / gravity;
         if(t < t1){
@@ -478,7 +406,6 @@ public class DGFx{
             return t;
         }
 
-        //slide to a stop
         float ts = Math.min(tb - t2, 12f);
         flyDst = hs * t1 + hs2 * t2 + hs2 * (ts - ts * ts / 24f);
         flyZ = 0f;
@@ -492,5 +419,4 @@ public class DGFx{
         }
     }
 
-    //endregion
 }

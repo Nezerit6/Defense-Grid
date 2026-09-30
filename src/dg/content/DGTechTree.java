@@ -29,6 +29,22 @@ public class DGTechTree {
         addToNode(Blocks.salvo, () -> {
             node(arcflash, () -> {});
         });
+
+        addToNode(Blocks.lancer, () -> {
+            node(stormcoil, () -> {});
+        });
+
+        addToNode(Blocks.ripple, () -> {
+            node(quake, () -> {});
+        });
+
+        addToNode(Blocks.wave, () -> {
+            node(glacier, () -> {});
+        });
+
+        addToNode(Blocks.swarmer, () -> {
+            node(hornet, () -> {});
+        });
     }
 
     private static void addToNode(UnlockableContent parent, Runnable children) {

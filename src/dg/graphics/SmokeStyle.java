@@ -6,21 +6,16 @@ import arc.math.*;
 import arc.util.Tmp;
 import arc.util.io.*;
 
-/** Parameters of smoke puffs that billow up from the ground and rise in perspective. */
 public class SmokeStyle{
     private static final Rand rand = new Rand();
 
     public int count = 7;
-    /** How far puffs spread from the source. */
     public float spread = 9f;
-    /** Height puffs rise to. */
     public float height = 14f;
     public float size = 3.2f;
     public float lifetime = 70f;
-    /** Half-angle of the direction puffs drift in, around the effect rotation. 180 spreads them all around. */
     public float cone = 70f;
     public float alpha = 0.6f;
-    /** Random shortening of each puff's life, 0 for all puffs to fade together. */
     public float lifeRand = 0f;
     public Color from = Color.valueOf("8b8c95"), to = Color.valueOf("6e7080");
 
@@ -37,7 +32,6 @@ public class SmokeStyle{
         this.to = to;
     }
 
-    /** Draws the smoke {@code time} ticks after it was emitted. */
     public void draw(float x, float y, float rotation, float time, long seed){
         if(time >= lifetime) return;
         float fin = time / lifetime;

@@ -12,14 +12,9 @@ import mindustry.gen.Building;
 import mindustry.ui.Styles;
 import mindustry.world.Block;
 
-/**
- * Sandbox block that keeps emitting the turret smoke, like a plant chimney would.
- * Tap it to tweak the smoke. Settings are saved with the map but not synced in multiplayer.
- */
 public class SmokeTestBlock extends Block{
     public static final float maxLifetime = 240f;
 
-    /** Where the smoke comes out, relative to the block center. */
     public float smokeX = 0f, smokeY = 0f;
 
     public SmokeTestBlock(String name){
@@ -40,8 +35,8 @@ public class SmokeTestBlock extends Block{
     }
 
     static final Preset[] presets = {
-        new Preset("Shatter", new SmokeStyle(7, 9f, 14f, 3.2f, 70f, Color.valueOf("8b8c95"), Color.valueOf("6e7080"))),
-        new Preset("Arcflash", new SmokeStyle(9, 12f, 18f, 3.4f, 90f, Color.valueOf("a5a6ad"), Color.valueOf("6e7080"))),
+        new Preset("Quake", new SmokeStyle(7, 9f, 14f, 3.2f, 70f, Color.valueOf("8b8c95"), Color.valueOf("6e7080"))),
+        new Preset("Hornet", new SmokeStyle(9, 12f, 18f, 3.4f, 90f, Color.valueOf("a5a6ad"), Color.valueOf("6e7080"))),
         new Preset("Frost", new SmokeStyle(6, 7f, 10f, 2.4f, 45f, Color.white, Color.valueOf("afeeee"))),
         new Preset("Plant", new SmokeStyle(10, 10f, 26f, 3.6f, 160f, Color.valueOf("c4c5cc"), Color.valueOf("5d5e68"))),
         new Preset("Soot", new SmokeStyle(8, 8f, 20f, 3f, 120f, Color.valueOf("4d4e58"), Color.valueOf("2c2d38"))),
@@ -49,7 +44,6 @@ public class SmokeTestBlock extends Block{
     };
 
     static{
-        //plant chimneys puff all around and fade unevenly
         presets[3].style.cone = 180f;
         presets[3].style.lifeRand = 0.45f;
         presets[4].style.cone = 180f;
@@ -59,9 +53,7 @@ public class SmokeTestBlock extends Block{
 
     public class SmokeTestBuild extends Building{
         public SmokeStyle style = new SmokeStyle().set(presets[3].style);
-        /** Ticks between puffs. */
         public float interval = 20f;
-        /** Direction the smoke drifts in. */
         public float wind = 90f;
 
         protected float counter;

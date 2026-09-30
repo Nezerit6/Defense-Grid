@@ -8,24 +8,17 @@ import dg.graphics.DGDraw3D;
 import mindustry.entities.part.DrawPart;
 import mindustry.graphics.*;
 
-/** A glowing orb hovering above the turret. It lights up the turret below it and emits light. */
 public class OrbPart extends DrawPart{
     public float x, y, z;
-    /** Height added when {@link #liftProgress} is 1, to follow a lifted part. */
     public float lift = 0f;
     public PartProgress liftProgress = PartProgress.warmup;
     public float radius = 2f, radiusTo = -1f;
-    /** Size of the bright core, relative to the radius. */
     public float coreScl = 0.5f;
     public float pulseScl = 0f, pulseMag = 0f;
     public Color color = Pal.lancerLaser.cpy(), coreColor = Color.white.cpy();
-    /** Progress that controls the radius. */
     public PartProgress progress = PartProgress.warmup;
-    /** Progress that controls opacity. */
     public PartProgress alphaProgress = PartProgress.constant(1f);
-    /** Length of the four sparkle spikes, 0 to disable. */
     public float spikes = 0f, spikeRotateSpeed = 1f;
-    /** Radius of the light pooled on the turret under the orb, relative to the orb radius. 0 to disable. */
     public float pool = 2.5f, poolAlpha = 0.3f;
     public float lightRadius = 3f, lightOpacity = 0.6f;
     public boolean mirror = false;
