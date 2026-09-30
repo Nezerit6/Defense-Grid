@@ -3,8 +3,8 @@ package dg.content;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
 import arc.math.*;
-import arc.util.Tmp;
-import dg.graphics.DGDraw3D;
+import dg.graphics.*;
+import dg.world.blocks.SmokeTestBlock;
 import mindustry.content.Fx;
 import mindustry.entities.*;
 import mindustry.entities.effect.*;
@@ -62,24 +62,14 @@ public class DGFx{
         strokeFrom = 2.5f;
     }}),
 
-    arcletDischarge = new Effect(12f, e -> {
-        color(Color.white, Pal.lancerLaser, e.fin());
-        stroke(1.1f * e.fout());
-        Lines.circle(e.x, e.y, 1f + 4.5f * e.finpow());
-        randLenVectors(e.id, 4, 2f + 6f * e.finpow(), (x, y) -> lineAngle(e.x + x, e.y + y, Mathf.angle(x, y), 1f + e.fout() * 2f));
-        Drawf.light(e.x, e.y, 20f * e.fout(), Pal.lancerLaser, 0.6f);
-    });
+    /** Smoke drawn with the {@link SmokeStyle} passed as effect data; used by the smoke test block. */
+    customSmoke = new Effect(SmokeTestBlock.maxLifetime, 200f, e -> {
+        if(e.data instanceof SmokeStyle) ((SmokeStyle)e.data).draw(e.x, e.y, e.rotation, e.time, e.id);
+    }).layer(Layer.bullet - 1f);
 
     /** Smoke that billows up from the ground; the effect rotation is the direction it drifts in. */
     public static Effect risingSmoke(int count, float spread, float height, float size, Color from, Color to, float lifetime){
-        return new Effect(lifetime, 120f, e -> {
-            float z = height * e.finpow();
-            float scl = DGDraw3D.scale(z);
-            Color center = Tmp.c1.set(from).lerp(to, e.fin()).mulA(0.6f * e.fout()), edge = Tmp.c2.set(center).a(0f);
-            randLenVectors(e.id, count, 1f + spread * e.finpow(), e.rotation, 70f, (x, y) -> {
-                float rad = size * (0.5f + 0.9f * Mathf.clamp(e.fin() * 3f)) * (0.7f + 0.3f * e.fout()) * scl;
-                Fill.light(DGDraw3D.x(e.x + x, z), DGDraw3D.y(e.y + y, z), 12, rad, center, edge);
-            });
-        }).layer(Layer.bullet - 1f);
+        SmokeStyle style = new SmokeStyle(count, spread, height, size, lifetime, from, to);
+        return new Effect(lifetime, 120f, e -> style.draw(e.x, e.y, e.rotation, e.time, e.id)).layer(Layer.bullet - 1f);
     }
 }

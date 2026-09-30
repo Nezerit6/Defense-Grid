@@ -16,8 +16,6 @@ public class LiftPart extends RegionPart{
     public PartProgress liftProgress = PartProgress.warmup;
     /** Opacity of the shadow cast by this part. */
     public float shadowAlpha = 1f;
-    /** If positive, the part moves to this layer once lifted past {@link #liftLayerThreshold}, e.g. to rise above the rest of the turret. */
-    public float liftLayer = -1f, liftLayerThreshold = 0.05f;
 
     public LiftPart(String region){
         super(region);
@@ -34,7 +32,6 @@ public class LiftPart extends RegionPart{
         Draw.z(Draw.z() + layerOffset);
 
         float liftProg = liftProgress.getClamp(params);
-        if(liftLayer > 0 && liftProg > liftLayerThreshold) Draw.z(liftLayer);
 
         float prevZ = Draw.z();
         float prog = progress.getClamp(params), sclProg = growProgress.getClamp(params);

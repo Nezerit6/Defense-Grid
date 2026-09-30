@@ -3,11 +3,10 @@ package dg.content.turrets;
 import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.math.Interp;
-import arc.math.Mathf;
-import arc.util.Time;
 import dg.content.DGFx;
 import dg.entities.bullet.ChainLightningBulletType;
 import dg.entities.part.*;
+import dg.world.blocks.SmokeTestBlock;
 import mindustry.content.*;
 import mindustry.entities.bullet.*;
 import mindustry.entities.effect.*;
@@ -29,7 +28,9 @@ import static mindustry.type.ItemStack.with;
 public class DGTurrets {
     public static Block
 
-            arclet, needler, shatter, cryolance, arcflash;
+            arclet, needler, shatter, cryolance, arcflash,
+
+            smokeTest;
 
     public static void load(){
 
@@ -47,96 +48,10 @@ public class DGTurrets {
             shootCone = 40f;
             rotateSpeed = 3.5f;
             targetAir = false;
-            heatColor = Pal.lancerLaser;
+            heatColor = Color.red;
             shootSound = Sounds.spark;
-            shootEffect = new MultiEffect(Fx.lightningShoot, DGFx.arcletDischarge);
+            shootEffect = Fx.lightningShoot;
             consumePower(4.3f);
-
-            //charge of the capacitor: 0 right after a shot, 1 when ready to fire again
-            PartProgress ready = PartProgress.reload.inv();
-            PartProgress armed = PartProgress.warmup.mul(ready);
-
-            drawer = new DrawTurret(){{
-                parts.addAll(
-                        //crystal core glows while armed
-                        new RegionPart(""){{
-                            drawRegion = false;
-                            heatColor = Color.valueOf("ffe9a6");
-                            heatProgress = armed.mul(0.4f).add(PartProgress.warmup.mul(0.15f)).absin(9f, 0.1f);
-                        }},
-                        new TubePart(){{
-                            y = 0.2f;
-                            z2 = 2.6f;
-                            radius = 0.7f;
-                        }},
-                        //capacitor orb floating above the crystal, grows as it recharges
-                        new OrbPart(){{
-                            y = 0.2f;
-                            z = 3.4f;
-                            radius = 0.45f;
-                            radiusTo = 0.95f;
-                            coreColor = Color.valueOf("e8efff");
-                            progress = ready;
-                            alphaProgress = PartProgress.warmup.mul(0.55f).add(0.45f);
-                            pulseScl = 5f;
-                            pulseMag = 0.12f;
-                            pool = 3f;
-                        }},
-                        //discharge flash right after firing
-                        new OrbPart(){{
-                            y = 0.2f;
-                            z = 3.4f;
-                            radius = 0f;
-                            radiusTo = 1.5f;
-                            progress = PartProgress.heat.curve(Interp.pow2Out);
-                            alphaProgress = PartProgress.heat;
-                            coreScl = 0.6f;
-                            spikes = 1.6f;
-                            spikeRotateSpeed = 4f;
-                            pool = 0f;
-                        }},
-                        //arcs jumping from the side electrodes to the orb
-                        new ArcPart(){{
-                            mirror = true;
-                            x1 = 3f;
-                            y1 = -0.9f;
-                            z1 = 0.6f;
-                            y2 = 0.2f;
-                            z2 = 3.4f;
-                            progress = armed;
-                            chance = 0.5f;
-                            jitter = 0.8f;
-                            stroke = 0.6f;
-                        }},
-                        new ArcPart(){{
-                            y1 = 3.2f;
-                            z1 = 0.4f;
-                            y2 = 0.2f;
-                            z2 = 3.4f;
-                            segments = 3;
-                            progress = armed;
-                            chance = 0.3f;
-                            jitter = 0.6f;
-                            stroke = 0.5f;
-                        }},
-                        //electrons circling the orb on a tilted orbit
-                        new OrbitPart(){{
-                            y = 0.2f;
-                            z = 3.4f;
-                            count = 3;
-                            radius = 2.6f;
-                            tilt = 65f;
-                            tiltRotation = 30f;
-                            spinSpeed = 5f;
-                            shardWidth = 0.7f;
-                            shardLength = 1.3f;
-                            color = Color.white;
-                            backColor = Pal.lancerLaser.cpy().mul(0.7f);
-                            progress = PartProgress.warmup;
-                            alphaProgress = PartProgress.warmup;
-                        }}
-                );
-            }};
             coolant = consumeCoolant(0.1f);
 
             shootType = new ChainLightningBulletType(){{
@@ -347,21 +262,6 @@ public class DGTurrets {
                             under = true;
                             //plates kick back with the barrel
                             moves.add(new PartMove(PartProgress.recoil.curve(Interp.pow2In), 0.6f, -0.9f, -4f));
-                        }},
-                        //a shell glows in the breech once it is chambered
-                        new OrbPart(){{
-                            y = -5.5f;
-                            z = 0.5f;
-                            radius = 0.3f;
-                            radiusTo = 0.75f;
-                            color = Color.valueOf("ea8878");
-                            coreColor = Color.valueOf("ffd5c8");
-                            progress = PartProgress.reload.inv().curve(Interp.pow3In);
-                            alphaProgress = PartProgress.warmup.mul(PartProgress.reload.inv().curve(0.6f, 0.4f).clamp());
-                            pulseScl = 4f;
-                            pulseMag = 0.15f;
-                            pool = 3f;
-                            lightRadius = 4f;
                         }},
                         //the barrel keeps smoking for a moment after a shot
                         new RisePart(){{
@@ -574,8 +474,7 @@ public class DGTurrets {
 
                             moves.add(new PartMove(PartProgress.recoil, 1.2f, 0f, -15f));
                         }},
-                        //the missile is raised off the rails when armed
-                        new LiftPart("-missile"){{
+                        new RegionPart("-missile"){{
                             progress = PartProgress.reload.curve(Interp.pow2In);
 
                             color = Color.white;
@@ -584,33 +483,12 @@ public class DGTurrets {
                             mixColor = new Color(1f, 1f, 1f, 0f);
                             outline = false;
 
-                            //slides out of the hull, then rises above the rails
                             under = true;
                             layerOffset = -0.01f;
-                            liftLayer = Layer.turret + 0.002f;
-                            lift = 2.5f;
-                            liftProgress = armed.curve(Interp.smooth);
-                            shadowAlpha = 0.8f;
 
                             mirror = false;
 
                             moves.add(new PartMove(PartProgress.warmup.inv(), 0f, -4f, 0f));
-                        }},
-                        //engine idling before launch
-                        new OrbPart(){{
-                            y = -4f;
-                            lift = 2.5f;
-                            liftProgress = armed.curve(Interp.smooth);
-                            radius = 0.3f;
-                            radiusTo = 0.85f;
-                            color = Pal.missileYellowBack;
-                            coreColor = Pal.missileYellow;
-                            progress = armed;
-                            alphaProgress = armed;
-                            pulseScl = 1.5f;
-                            pulseMag = 0.25f;
-                            pool = 3f;
-                            layer = Layer.turret + 0.001f;
                         }},
                         new RisePart(){{
                             y = -5f;
@@ -626,31 +504,6 @@ public class DGTurrets {
                             colorTo = DGFx.smokeColor;
                             progress = armed;
                             layer = Layer.bullet - 1f;
-                        }},
-                        //blinking warning beacons on the rail tips
-                        new OrbPart(){{
-                            x = 3.4f;
-                            y = 6.3f;
-                            z = 0.5f;
-                            radius = 0.7f;
-                            color = Pal.missileYellowBack;
-                            coreColor = Color.white;
-                            progress = PartProgress.constant(1f);
-                            alphaProgress = PartProgress.warmup.mul(p -> Mathf.sin(Time.time, 7f, 1f) > 0f ? 1f : 0.1f);
-                            pool = 3f;
-                            lightRadius = 5f;
-                        }},
-                        new OrbPart(){{
-                            x = -3.4f;
-                            y = 6.3f;
-                            z = 0.5f;
-                            radius = 0.7f;
-                            color = Pal.missileYellowBack;
-                            coreColor = Color.white;
-                            progress = PartProgress.constant(1f);
-                            alphaProgress = PartProgress.warmup.mul(p -> Mathf.sin(Time.time, 7f, 1f) > 0f ? 0.1f : 1f);
-                            pool = 3f;
-                            lightRadius = 5f;
                         }}
                 );
             }};
@@ -678,6 +531,15 @@ public class DGTurrets {
             coolant = consumeCoolant(0.2f);
 
             limitRange();
+        }};
+
+        //sandbox only, to play with the turret smoke on a chimney
+        smokeTest = new SmokeTestBlock("smoke-test"){{
+            requirements(Category.effect, BuildVisibility.sandboxOnly, with());
+            size = 2;
+            health = 400;
+            smokeX = -3f;
+            smokeY = 3.5f;
         }};
     }
 }
