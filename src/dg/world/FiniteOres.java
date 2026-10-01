@@ -98,7 +98,7 @@ public class FiniteOres{
     }
 
     public static boolean finite(Tile tile){
-        return tile != null && tile.overlay() instanceof OreBlock && !((OreBlock)tile.overlay()).wallOre && tile.overlay().itemDrop != null;
+        return tile != null && tile.overlay() instanceof OreBlock && !((OreBlock)tile.overlay()).wallOre && tile.overlay().itemDrop != null && !tile.block().isStatic();
     }
 
     public static int initial(Tile tile){
