@@ -32,6 +32,8 @@ public class FiniteOres{
     public static final IntIntMap amounts = new IntIntMap(), maxes = new IntIntMap();
 
     private static final Seq<Tile> tiles = new Seq<>();
+    private static final IntFloatMap unitTimers = new IntFloatMap(), lastTimers = new IntFloatMap();
+    private static final IntIntMap unitTiles = new IntIntMap(), lastTiles = new IntIntMap();
     private static final Rect view = new Rect();
 
     public static void init(){
@@ -82,6 +84,8 @@ public class FiniteOres{
                 () -> b.dominantItem == null ? 0f : fraction(b, b.dominantItem)
             ));
         }
+
+        Events.run(Trigger.update, FiniteOres::updateUnits);
 
         if(!headless){
             Events.run(Trigger.draw, FiniteOres::draw);
@@ -142,19 +146,52 @@ public class FiniteOres{
         tiles.removeAll(t -> !finite(t) || t.drop() != item);
         if(tiles.isEmpty()) return;
 
-        Tile tile = tiles.random();
+        if(use(tiles.random())) build.onProximityUpdate();
+    }
+
+    static void updateUnits(){
+        if(!enabled() || net.client() || !state.isPlaying()){
+            unitTimers.clear();
+            return;
+        }
+
+        lastTimers.clear();
+        lastTimers.putAll(unitTimers);
+        lastTiles.clear();
+        lastTiles.putAll(unitTiles);
+        unitTimers.clear();
+        unitTiles.clear();
+
+        Groups.unit.each(u -> {
+            Tile tile = u.mineTile;
+            if(tile == null || !finite(tile)) return;
+
+            int pos = tile.pos();
+            if(lastTiles.get(u.id, -1) == pos && u.mineTimer < lastTimers.get(u.id, 0f) && u.getMineResult(tile) == tile.drop()){
+                if(use(tile)) u.mineTile = null;
+            }
+
+            if(u.mineTile != null){
+                unitTimers.put(u.id, u.mineTimer);
+                unitTiles.put(u.id, pos);
+            }
+        });
+    }
+
+    static boolean use(Tile tile){
+        Item item = tile.drop();
         touch(tile);
         int left = amounts.get(tile.pos()) - 1;
 
         if(left > 0){
             amounts.put(tile.pos(), left);
-            return;
+            return false;
         }
 
         for(int dx = -veinRadius; dx <= veinRadius; dx++){
             for(int dy = -veinRadius; dy <= veinRadius; dy++){
                 Tile other = world.tile(tile.x + dx, tile.y + dy);
-                if(other != null && other != tile && other.overlay() == tile.overlay()) touch(other);
+                if(other != null && other != tile && other.overlay() == tile.overlay() && finite(other)) touch(other);
             }
         }
 
@@ -162,7 +199,7 @@ public class FiniteOres{
         maxes.remove(tile.pos());
         DGFx.oreDepleted.at(tile.worldx(), tile.worldy(), 0f, item.color);
         tile.setOverlayNet(Blocks.air);
-        build.onProximityUpdate();
+        return true;
     }
 
     static int left(DrillBuild build, Item item){
