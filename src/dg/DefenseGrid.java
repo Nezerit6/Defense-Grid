@@ -20,6 +20,7 @@ public class DefenseGrid extends Mod{
             t.checkPref("dg-finite-ores", true);
             t.sliderPref("dg-ore-richness", 4, 1, 16, i -> (i * 25) + "%");
             t.checkPref("dg-power-overload", true);
+            t.checkPref("dg-fancy-destroy", true);
             t.sliderPref("dg-power-limit", 4, 1, 16, i -> (i * 25) + "%");
         }));
     }
@@ -27,6 +28,7 @@ public class DefenseGrid extends Mod{
     @Override
     public void init(){
         FiniteOres.init();
+        dg.content.DGDestroyFx.init();
     }
 
     @Override
