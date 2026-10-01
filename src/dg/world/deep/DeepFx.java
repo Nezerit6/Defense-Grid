@@ -52,6 +52,12 @@ public class DeepFx{
         Fill.square(e.x + Angles.trnsx(e.rotation, d), e.y + Angles.trnsy(e.rotation, d), 1.1f * e.fout(), e.rotation + e.time * 8f);
     }),
 
+    steam = new Effect(80f, e -> {
+        Draw.color(Color.white, Color.valueOf("9a9ba3"), e.fin());
+        Draw.alpha(0.45f * e.fout());
+        Fill.circle(e.x + e.fin() * 4f, e.y + e.finpow() * 10f, 1.5f + 3f * e.fin());
+    }),
+
     shutter = new Effect(40f, e -> {
         Draw.color(e.color);
         Lines.stroke(1.6f * e.fout());

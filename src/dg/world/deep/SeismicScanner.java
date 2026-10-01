@@ -63,9 +63,10 @@ public class SeismicScanner extends Block{
                 Effect.shake(1.5f, 12f, this);
                 Sounds.drillImpact.at(x, y, 0.6f, 0.6f);
                 for(Deposits.Deposit d : Deposits.all){
-                    if(!d.found && Mathf.dst(d.x * tilesize, d.y * tilesize, x, y) <= range + d.radius * tilesize){
-                        float delay = Mathf.dst(d.x * tilesize, d.y * tilesize, x, y) / range * 70f;
-                        Time.run(delay, () -> Deposits.reveal(d));
+                    float dst = Mathf.dst(d.x * tilesize, d.y * tilesize, x, y);
+                    if(d.amount > 0 && dst <= range + d.radius * tilesize){
+                        float strength = 1f - 0.6f * Mathf.clamp(dst / range);
+                        Time.run(dst / range * 70f, () -> Deposits.ping(d, strength));
                     }
                 }
             }

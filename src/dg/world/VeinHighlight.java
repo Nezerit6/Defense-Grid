@@ -261,7 +261,7 @@ public class VeinHighlight{
         return null;
     }
 
-    static void text(String text, float x, float y, float scale, Color color){
+    public static void text(String text, float x, float y, float scale, Color color){
         Draw.z(Layer.overlayUI + 1f);
         Font font = Fonts.outline;
         GlyphLayout layout = Pools.obtain(GlyphLayout.class, GlyphLayout::new);

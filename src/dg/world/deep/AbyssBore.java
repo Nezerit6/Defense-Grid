@@ -18,7 +18,7 @@ import mindustry.world.meta.*;
 import static mindustry.Vars.*;
 
 public class AbyssBore extends Block{
-    public float drillTime = 600f, stopTime = 120f;
+    public float drillTime = 600f;
     public int capacity = 50;
     public TextureRegion rotator;
 
@@ -39,88 +39,135 @@ public class AbyssBore extends Block{
         rotator = Core.atlas.find("laser-drill-rotator");
     }
 
+    public float spinUpTime = 180f, windDownTime = 150f, coolTime = 420f, baseTime = 400f, hardnessTime = 120f;
+
+    public float perCycle(Deposits.Deposit d){
+        return drillTime * d.richness() / (baseTime + hardnessTime * d.item.hardness);
+    }
+
     @Override
     public boolean canPlaceOn(Tile tile, Team team, int rotation){
-        return Deposits.foundAt(tile.x, tile.y) != null;
+        return Deposits.visibleAt(tile.x, tile.y) != null;
     }
 
     @Override
     public void drawPlace(int x, int y, int rotation, boolean valid){
         super.drawPlace(x, y, rotation, valid);
-        Deposits.Deposit d = Deposits.foundAt(x, y);
+        Deposits.Deposit d = Deposits.visibleAt(x, y);
         if(d == null){
             drawPlaceText(Core.bundle.get("dg-bore-nodeposit"), x, y, false);
         }else{
-            drawPlaceText(Core.bundle.format("dg-bore-yield", d.item.emoji(), d.yield), x, y, true);
+            drawPlaceText(Core.bundle.format("dg-bore-yield", d.item.emoji(), (int)perCycle(d)), x, y, true);
         }
     }
 
     @Override
     public void setStats(){
         super.setStats();
-        stats.add(Stat.drillSpeed, Core.bundle.format("dg-bore-cycle", (int)(drillTime / 60f)));
+        stats.add(Stat.drillSpeed, Core.bundle.format("dg-bore-cycle", (int)((spinUpTime + drillTime + windDownTime + coolTime) / 60f)));
     }
 
     @Override
     public void setBars(){
         super.setBars();
-        addBar("dg-bore", (BoreBuild e) -> new Bar(() -> Core.bundle.get(e.phase == 1 ? "dg-bore-drilling" : e.phase == 2 ? "dg-bore-stopping" : "dg-bore-open"),
-            () -> e.phase == 1 ? Pal.accent : Pal.lightOrange, () -> e.phase == 1 ? e.progress / drillTime : e.phase == 2 ? 1f - e.progress / stopTime : 1f));
+        addBar("dg-bore", (BoreBuild e) -> new Bar(() -> Core.bundle.get(phaseNames[e.phase]),
+            () -> e.phase == 2 ? Pal.accent : e.phase == 4 ? Color.valueOf("8ab4ff") : Pal.lightOrange, () -> e.phaseFraction()));
     }
+
+    static final String[] phaseNames = {"dg-bore-idle", "dg-bore-spinup", "dg-bore-drilling", "dg-bore-stopping", "dg-bore-cooling", "dg-bore-open"};
 
     public class BoreBuild extends Building{
         public int phase;
-        public float progress, spin, spinSpeed, shake;
+        public float time, spin, spinSpeed, shake, heat, mined;
         public Deposits.Deposit deposit;
 
         Deposits.Deposit deposit(){
-            if(deposit == null || !deposit.contains(tile.x, tile.y)) deposit = Deposits.at(tile.x, tile.y);
+            if(deposit == null || deposit.amount <= 0 || !deposit.contains(tile.x, tile.y)) deposit = Deposits.at(tile.x, tile.y);
             return deposit;
+        }
+
+        public float phaseFraction(){
+            switch(phase){
+                case 1: return time / spinUpTime;
+                case 2: return time / drillTime;
+                case 3: return 1f - time / windDownTime;
+                case 4: return 1f - time / coolTime;
+                case 5: return items.total() / (float)capacity;
+                default: return 0f;
+            }
+        }
+
+        void next(int p){
+            phase = p;
+            time = 0f;
         }
 
         @Override
         public void updateTile(){
             Deposits.Deposit d = deposit();
-            if(d == null) return;
+            if(d != null && phase >= 1 && phase <= 3) d.signal = Math.max(d.signal, 0.35f);
 
-            if(phase == 0){
-                if(items.total() + d.yield <= capacity && potentialEfficiency > 0f){
-                    phase = 1;
-                    progress = 0f;
-                }
-            }else if(phase == 1){
-                progress += edelta();
-                spinSpeed = Mathf.lerpDelta(spinSpeed, 14f * efficiency, 0.03f);
-                shake = Mathf.lerpDelta(shake, efficiency, 0.05f);
-                if(Mathf.chanceDelta(0.25f * efficiency)){
-                    float a = Mathf.random(360f);
-                    DeepFx.boreDust.at(x + Angles.trnsx(a, size * 4f), y + Angles.trnsy(a, size * 4f), a);
-                }
-                if(Mathf.chanceDelta(0.3f * efficiency)) DeepFx.boreChip.at(x, y, Mathf.random(360f), d.item.color);
-                if(timer(timerDump, 6f) && !headless) Effect.shake(0.6f * efficiency, 6f, this);
-                if(progress >= drillTime){
-                    phase = 2;
-                    progress = stopTime;
-                    Sounds.drillImpact.at(x, y, 0.8f, 0.7f);
-                }
-            }else if(phase == 2){
-                progress -= edelta();
-                spinSpeed = Mathf.lerpDelta(spinSpeed, 0f, 0.06f);
-                shake = Mathf.lerpDelta(shake, 0.25f, 0.04f);
-                if(progress <= 0f){
-                    phase = 3;
-                    spinSpeed = 0f;
-                    items.add(d.item, Math.min(d.yield, capacity - items.total()));
-                    DeepFx.shutter.at(x, y, size * tilesize / 2f, d.item.color);
-                    Sounds.door.at(x, y);
-                }
-            }else{
-                shake = Mathf.lerpDelta(shake, 0f, 0.05f);
-                if(items.total() + d.yield <= capacity) phase = 0;
+            switch(phase){
+                case 0:
+                    if(d != null && items.total() == 0 && potentialEfficiency > 0f) next(1);
+                    break;
+                case 1:
+                    time += edelta();
+                    spinSpeed = Mathf.lerp(0f, 9f, Interp.pow2In.apply(Mathf.clamp(time / spinUpTime)));
+                    shake = Mathf.clamp(time / spinUpTime) * 0.6f;
+                    heat = Mathf.approachDelta(heat, 0.2f, 0.002f);
+                    if(time >= spinUpTime) next(2);
+                    break;
+                case 2:
+                    time += edelta();
+                    spinSpeed = Mathf.lerpDelta(spinSpeed, 9f * efficiency, 0.05f);
+                    shake = Mathf.lerpDelta(shake, 0.6f + Mathf.absin(time, 7f, 0.4f), 0.1f) * Math.max(efficiency, 0.2f);
+                    heat = Mathf.approachDelta(heat, 1f, 0.0025f * efficiency);
+                    if(d != null){
+                        mined += edelta() * d.richness() / (baseTime + hardnessTime * d.item.hardness);
+                        while(mined >= 1f && items.total() < capacity){
+                            mined -= 1f;
+                            if(Deposits.take(d, 1) > 0) items.add(d.item, 1);
+                        }
+                        if(Mathf.chanceDelta(0.2f * efficiency)) DeepFx.boreChip.at(x, y, Mathf.random(360f), d.item.color);
+                    }
+                    if(Mathf.chanceDelta(0.12f * efficiency)){
+                        float a = Mathf.random(360f);
+                        DeepFx.boreDust.at(x + Angles.trnsx(a, size * 4f), y + Angles.trnsy(a, size * 4f), a);
+                    }
+                    if(timer(timerDump, 10f) && !headless) Effect.shake(0.25f * efficiency, 10f, this);
+                    if(time >= drillTime || d == null || items.total() >= capacity){
+                        next(3);
+                        Sounds.drillImpact.at(x, y, 0.7f, 0.6f);
+                    }
+                    break;
+                case 3:
+                    time += Time.delta;
+                    spinSpeed = 9f * Interp.pow2Out.apply(1f - Mathf.clamp(time / windDownTime));
+                    shake = 0.35f * (1f - Mathf.clamp(time / windDownTime));
+                    if(time >= windDownTime){
+                        next(4);
+                        spinSpeed = 0f;
+                        shake = 0f;
+                    }
+                    break;
+                case 4:
+                    time += Time.delta;
+                    heat = Mathf.approachDelta(heat, 0f, 1f / coolTime);
+                    if(Mathf.chanceDelta(0.08f * heat)) DeepFx.steam.at(x + Mathf.range(size * 3f), y + Mathf.range(size * 3f));
+                    if(time >= coolTime){
+                        next(5);
+                        DeepFx.shutter.at(x, y, size * tilesize / 2f, d == null ? Color.white : d.item.color);
+                        Sounds.door.at(x, y);
+                    }
+                    break;
+                default:
+                    dumpAccumulate();
+                    if(items.total() == 0) next(0);
+                    break;
             }
 
             spin += spinSpeed * Time.delta;
-            if(phase == 3 || items.total() > 0) dumpAccumulate();
         }
 
         @Override
@@ -135,9 +182,16 @@ public class AbyssBore extends Block{
 
         @Override
         public void draw(){
-            float amp = shake * 1.1f;
+            float amp = shake * 0.35f;
             float jx = Mathf.range(amp), jy = Mathf.range(amp);
             Draw.rect(region, x + jx, y + jy);
+            if(heat > 0.01f){
+                Draw.blend(Blending.additive);
+                Draw.color(Color.valueOf("ff6a3a"), heat * 0.3f);
+                Draw.rect(region, x + jx, y + jy);
+                Draw.blend();
+                Draw.color();
+            }
             Draw.z(Layer.blockOver);
             if(rotator.found()){
                 Draw.rect(rotator, x + jx * 1.5f, y + jy * 1.5f, spin);
@@ -146,17 +200,17 @@ public class AbyssBore extends Block{
                 Lines.poly(x + jx, y + jy, 6, 6f, spin);
             }
             Deposits.Deposit d = deposit();
-            if(d != null){
-                float glow = phase == 1 ? Mathf.absin(Time.time, 3f, 0.4f) + 0.3f : phase == 3 ? 0.8f : 0.15f;
-                Draw.color(d.item.color, glow);
-                Lines.stroke(1.2f);
-                Lines.square(x + jx, y + jy, size * tilesize / 2f - 1.5f);
-                if(phase == 3){
-                    Draw.color();
-                    Draw.rect(d.item.fullIcon, x + size * tilesize / 2f - 4f, y + size * tilesize / 2f - 4f, 6f, 6f);
-                }
-                Drawf.light(x, y, 30f + 20f * shake, d.item.color, 0.4f * glow);
+            Color c = d == null ? Color.gray : d.item.color;
+            float glow = phase == 2 ? Mathf.absin(Time.time, 3f, 0.3f) + 0.25f : phase == 5 ? 0.8f : 0.12f;
+            Draw.color(c, glow);
+            Lines.stroke(1.2f);
+            Lines.square(x + jx, y + jy, size * tilesize / 2f - 1.5f);
+            if(phase == 5 && items.total() > 0){
+                Draw.color();
+                Item top = items.first();
+                if(top != null) Draw.rect(top.fullIcon, x + size * tilesize / 2f - 4f, y + size * tilesize / 2f - 4f, 6f, 6f);
             }
+            Drawf.light(x, y, 30f + 30f * heat, Tmp.c1.set(c).lerp(Color.valueOf("ff6a3a"), heat), 0.3f + 0.4f * heat);
             Draw.reset();
         }
 
@@ -164,14 +218,18 @@ public class AbyssBore extends Block{
         public void write(Writes write){
             super.write(write);
             write.b(phase);
-            write.f(progress);
+            write.f(time);
+            write.f(heat);
+            write.f(mined);
         }
 
         @Override
         public void read(Reads read, byte revision){
             super.read(read, revision);
             phase = read.b();
-            progress = read.f();
+            time = read.f();
+            heat = read.f();
+            mined = read.f();
         }
     }
 }
