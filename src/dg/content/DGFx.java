@@ -302,6 +302,8 @@ public class DGFx{
         Drawf.light(e.x, e.y, r * 5f * e.fout(), e.color, 0.9f);
     }),
 
+    liftDust = risingSmoke(5, 14f, 10f, 4f, Color.valueOf("b0b1b8"), dirt, 90f, 25f, 0.4f),
+
     wallChips = new Effect(45f, 50f, e -> {
         shards(e, 2, 0.4f, 0.6f, 0.6f, 0.9f, 0.7f, 4, Tmp.c3.set(e.color).lerp(Color.white, 0.25f), e.color, Tmp.c4.set(e.color).mul(0.55f), 100f, 0.3f);
     }),
