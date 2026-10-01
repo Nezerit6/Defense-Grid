@@ -21,7 +21,7 @@ public class SmokeStyle{
     public float lifeRand = 0f;
     public Color from = Color.valueOf("8b8c95"), to = Color.valueOf("6e7080");
 
-    static TextureRegion puff(){
+    public static TextureRegion puff(){
         if(puff == null) puff = Core.atlas.find("dg-smoke-puff");
         return puff;
     }
