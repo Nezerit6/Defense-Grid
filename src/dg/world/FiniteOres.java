@@ -91,6 +91,7 @@ public class FiniteOres{
         }
 
         Events.run(Trigger.update, FiniteOres::updateUnits);
+        WallDigging.init();
 
         if(!headless){
             Events.run(Trigger.draw, FiniteOres::draw);

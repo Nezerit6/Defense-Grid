@@ -264,6 +264,21 @@ public class DGFx{
         risingSmoke(14, 16f, 30f, 5f, Color.valueOf("8b8c95"), Color.valueOf("4d4e58"), 150f, 180f, 0.45f)
     ),
 
+    wallChips = new Effect(45f, 50f, e -> {
+        shards(e, 2, 0.4f, 0.6f, 0.6f, 0.9f, 0.7f, 4, Tmp.c3.set(e.color).lerp(Color.white, 0.25f), e.color, Tmp.c4.set(e.color).mul(0.55f), 100f, 0.3f);
+    }),
+
+    wallDust = risingSmoke(2, 5f, 7f, 2f, Color.valueOf("9a9ba3"), dirt, 55f, 50f, 0.4f),
+
+    wallCrumble = new MultiEffect(new Effect(80f, 90f, e -> {
+        e.scaled(18f, s -> {
+            color(e.color, dirt, s.fin());
+            stroke(2f * s.fout());
+            Lines.square(e.x, e.y, 4f + 6f * s.finpow(), 45f * s.fin());
+        });
+        shards(e, 12, 0.3f, 0.8f, 1.1f, 1.2f, 1.3f, 4, Tmp.c3.set(e.color).lerp(Color.white, 0.25f), e.color, Tmp.c4.set(e.color).mul(0.55f), 360f, 0.35f);
+    }), risingSmoke(10, 9f, 12f, 3.2f, Color.valueOf("9a9ba3"), dirt, 100f, 180f, 0.45f)),
+
     oreDepleted = new MultiEffect(new Effect(70f, 80f, e -> {
         e.scaled(20f, s -> {
             color(e.color, dirt, s.fin());
