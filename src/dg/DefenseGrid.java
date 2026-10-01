@@ -1,7 +1,9 @@
 package dg;
 
 import arc.*;
+import dg.content.DGStatus;
 import dg.content.DGTechTree;
+import dg.content.turrets.DGArsenal;
 import dg.content.turrets.DGTurrets;
 import dg.world.FiniteOres;
 import mindustry.game.EventType.*;
@@ -28,7 +30,9 @@ public class DefenseGrid extends Mod{
 
     @Override
     public void loadContent(){
+        DGStatus.load();
         DGTurrets.load();
+        DGArsenal.load();
         DGTechTree.load();
     }
 }

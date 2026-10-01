@@ -5,6 +5,7 @@ import mindustry.content.*;
 import mindustry.ctype.UnlockableContent;
 import mindustry.game.Objectives;
 
+import static dg.content.turrets.DGArsenal.*;
 import static dg.content.turrets.DGTurrets.*;
 
 public class DGTechTree {
@@ -28,6 +29,43 @@ public class DGTechTree {
 
         addToNode(Blocks.salvo, () -> {
             node(arcflash, () -> {});
+        });
+
+        addToNode(Blocks.parallax, () -> {
+            node(gravitor, () -> {
+                node(repulsor, () -> {});
+            });
+        });
+
+        addToNode(Blocks.wave, () -> {
+            node(drizzle, () -> {});
+            node(permafrost, () -> {
+                node(glaciate, () -> {});
+            });
+            node(miasma, () -> {});
+        });
+
+        addToNode(Blocks.lancer, () -> {
+            node(lineal, () -> {});
+            node(ricochet, () -> {});
+        });
+
+        addToNode(Blocks.segment, () -> {
+            node(aegis, () -> {});
+        });
+
+        addToNode(Blocks.salvo, () -> {
+            node(rotary, () -> {});
+            node(nest, () -> {});
+        });
+
+        addToNode(Blocks.ripple, () -> {
+            node(barrage, () -> {});
+            node(sower, () -> {});
+        });
+
+        addToNode(Blocks.arc, () -> {
+            node(lantern, () -> {});
         });
     }
 

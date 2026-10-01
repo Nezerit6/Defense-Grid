@@ -480,6 +480,14 @@ public class DGFx{
         return t1 + t2;
     }
 
+    static float flyDst(){
+        return flyDst;
+    }
+
+    static float flyZ(){
+        return flyZ;
+    }
+
     static void polyline(int links, float width){
         stroke(width);
         for(int i = 0; i < links; i++){
