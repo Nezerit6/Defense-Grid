@@ -5,6 +5,7 @@ import dg.content.*;
 import dg.entities.bullet.*;
 import dg.world.blocks.defense.*;
 import dg.world.blocks.turrets.*;
+import dg.world.radar.*;
 import mindustry.content.*;
 import mindustry.entities.bullet.*;
 import mindustry.entities.pattern.*;
@@ -19,7 +20,7 @@ import static mindustry.type.ItemStack.with;
 public class DGArsenal{
     public static Block
         gravitor, permafrost, glaciate, repulsor, lineal, barrage, miasma,
-        aegis, drizzle, ricochet, rotary, nest, sower, lantern;
+        aegis, drizzle, ricochet, rotary, nest, sower, lantern, radar, skyguard;
 
     public static void load(){
         gravitor = new WaveTower("gravitor"){{
@@ -331,6 +332,54 @@ public class DGArsenal{
             shootType = new HoverOrbBulletType(5.4f, 14f){{
                 color = DGTurretFx.orb;
             }};
+        }};
+        radar = new RadarBlock("radar"){{
+            requirements(Category.effect, with(Items.copper, 80, Items.lead, 60, Items.silicon, 50));
+            size = 2;
+            health = 500;
+            range = 260f;
+            consumePower(1.2f);
+        }};
+
+        skyguard = new SamTurret("skyguard"){{
+            requirements(Category.turret, with(Items.copper, 120, Items.graphite, 80, Items.silicon, 80, Items.titanium, 50));
+            size = 2;
+            health = 900;
+            range = 110f;
+            networkRange = 640f;
+            reload = 55f;
+            rotateSpeed = 8f;
+            shootCone = 35f;
+            predictTarget = false;
+            shoot = new ShootAlternate(5f){{
+                shots = 2;
+                shotDelay = 8f;
+            }};
+            shootSound = Sounds.missileLaunch;
+            shootEffect = Fx.shootSmallSmoke;
+
+            ammo(
+                Items.silicon, sam(Pal.missileYellow, Pal.missileYellowBack, 70f, 30f, 28f),
+                Items.blastCompound, sam(Pal.lightishOrange, Pal.lightOrange, 45f, 75f, 44f)
+            );
+        }};
+    }
+
+    static BulletType sam(Color fc, Color bc, float dmg, float splash, float rad){
+        return new SamMissileBulletType(4.6f, dmg){{
+            width = 8f;
+            height = 13f;
+            frontColor = fc;
+            backColor = bc;
+            trailColor = bc;
+            trailLength = 12;
+            trailWidth = 1.6f;
+            splashDamage = splash;
+            splashDamageRadius = rad;
+            hitEffect = DGTurretFx.clusterBoom;
+            despawnEffect = Fx.none;
+            hitSound = Sounds.explosion;
+            ammoMultiplier = 2f;
         }};
     }
 

@@ -21,6 +21,7 @@ public class DefenseGrid extends Mod{
             t.sliderPref("dg-ore-richness", 4, 1, 16, i -> (i * 25) + "%");
             t.checkPref("dg-power-overload", true);
             t.checkPref("dg-fancy-destroy", true);
+            t.checkPref("dg-radar-alarm", true);
             t.sliderPref("dg-power-limit", 4, 1, 16, i -> (i * 25) + "%");
         }));
     }
@@ -29,6 +30,7 @@ public class DefenseGrid extends Mod{
     public void init(){
         FiniteOres.init();
         dg.content.DGDestroyFx.init();
+        dg.world.radar.RadarNet.init();
     }
 
     @Override
