@@ -31,6 +31,7 @@ public class DefenseGrid extends Mod{
         FiniteOres.init();
         dg.content.DGDestroyFx.init();
         dg.world.radar.RadarNet.init();
+        dg.world.deep.Deposits.init();
     }
 
     @Override

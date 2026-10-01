@@ -6,6 +6,7 @@ import dg.entities.bullet.*;
 import dg.world.blocks.defense.*;
 import dg.world.blocks.turrets.*;
 import dg.world.radar.*;
+import dg.world.deep.*;
 import mindustry.content.*;
 import mindustry.entities.bullet.*;
 import mindustry.entities.pattern.*;
@@ -20,7 +21,7 @@ import static mindustry.type.ItemStack.with;
 public class DGArsenal{
     public static Block
         gravitor, permafrost, glaciate, repulsor, lineal, barrage, miasma,
-        aegis, drizzle, ricochet, rotary, nest, sower, lantern, radar, skyguard;
+        aegis, drizzle, ricochet, rotary, nest, sower, lantern, radar, skyguard, seismicScanner, abyssBore;
 
     public static void load(){
         gravitor = new WaveTower("gravitor"){{
@@ -339,6 +340,20 @@ public class DGArsenal{
             health = 500;
             range = 260f;
             consumePower(1.2f);
+        }};
+
+        seismicScanner = new SeismicScanner("seismic-scanner"){{
+            requirements(Category.production, with(Items.copper, 60, Items.lead, 50, Items.graphite, 30));
+            size = 2;
+            health = 400;
+            consumePower(0.8f);
+        }};
+
+        abyssBore = new AbyssBore("abyss-bore"){{
+            requirements(Category.production, with(Items.copper, 150, Items.graphite, 80, Items.silicon, 60, Items.titanium, 50));
+            size = 3;
+            health = 900;
+            consumePower(2.5f);
         }};
 
         skyguard = new SamTurret("skyguard"){{

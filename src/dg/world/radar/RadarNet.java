@@ -19,6 +19,7 @@ public class RadarNet{
     static final ObjectSet<RadarBlock.RadarBuild> radars = new ObjectSet<>();
     static final IntMap<IntFloatMap> seen = new IntMap<>();
     static final Seq<RadarBlock.RadarBuild> tmp = new Seq<>();
+    static final FloatSeq cuts = new FloatSeq();
     static float lastAlarm = -9999f;
     static Unit best;
     static float bestDst;
@@ -119,22 +120,35 @@ public class RadarNet{
         Seq<RadarBlock.RadarBuild> list = radars();
         Draw.z(Layer.overlayUI - 1f);
         Lines.stroke(1.6f, Tmp.c1.set(Pal.remove).a(0.8f));
-        int segs = 90;
         for(RadarBlock.RadarBuild r : list){
             if(r.team != team) continue;
             float R = r.range();
-            for(int i = 0; i < segs; i++){
-                float a1 = i * 360f / segs, a2 = (i + 1) * 360f / segs, am = (a1 + a2) / 2f;
-                float mx = r.x + Angles.trnsx(am, R), my = r.y + Angles.trnsy(am, R);
+            cuts.clear();
+            cuts.add(0f, 360f);
+            for(RadarBlock.RadarBuild o : list){
+                if(o == r || o.team != team) continue;
+                float d = r.dst(o), R2 = o.range();
+                if(d >= R + R2 || d <= Math.abs(R - R2) || d < 0.01f) continue;
+                float base = r.angleTo(o), half = (float)Math.acos(Mathf.clamp((d * d + R * R - R2 * R2) / (2f * d * R), -1f, 1f)) * Mathf.radDeg;
+                cuts.add(Mathf.mod(base - half, 360f), Mathf.mod(base + half, 360f));
+            }
+            cuts.sort();
+            for(int i = 0; i < cuts.size - 1; i++){
+                float a1 = cuts.get(i), a2 = cuts.get(i + 1);
+                if(a2 - a1 < 0.01f) continue;
+                float am = (a1 + a2) / 2f, mx = r.x + Angles.trnsx(am, R), my = r.y + Angles.trnsy(am, R);
                 boolean inside = false;
                 for(RadarBlock.RadarBuild o : list){
-                    if(o != r && o.team == team && o.within(mx, my, o.range() - 0.5f)){
+                    if(o != r && o.team == team && o.within(mx, my, o.range())){
                         inside = true;
                         break;
                     }
                 }
-                if(!inside){
-                    Lines.line(r.x + Angles.trnsx(a1, R), r.y + Angles.trnsy(a1, R), r.x + Angles.trnsx(a2, R), r.y + Angles.trnsy(a2, R));
+                if(inside) continue;
+                int steps = Math.max(2, (int)((a2 - a1) / 3f));
+                for(int k = 0; k < steps; k++){
+                    float b1 = Mathf.lerp(a1, a2, k / (float)steps), b2 = Mathf.lerp(a1, a2, (k + 1) / (float)steps);
+                    Lines.line(r.x + Angles.trnsx(b1, R), r.y + Angles.trnsy(b1, R), r.x + Angles.trnsx(b2, R), r.y + Angles.trnsy(b2, R), true);
                 }
             }
         }
