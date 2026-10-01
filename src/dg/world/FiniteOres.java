@@ -11,6 +11,7 @@ import arc.util.*;
 import arc.util.pooling.*;
 import dg.content.DGFx;
 import mindustry.ai.BlockIndexer;
+import mindustry.ai.types.MinerAI;
 import mindustry.content.Blocks;
 import mindustry.game.EventType.*;
 import mindustry.gen.*;
@@ -31,6 +32,7 @@ import static mindustry.Vars.*;
 public class FiniteOres{
     public static final int veinRadius = 3;
     public static final IntIntMap amounts = new IntIntMap(), maxes = new IntIntMap();
+    public static final IntSet depleted = new IntSet();
 
     private static final Seq<Tile> tiles = new Seq<>();
     private static java.lang.reflect.Field oresField, allOresField, quadSize;
@@ -66,6 +68,7 @@ public class FiniteOres{
         Events.on(WorldLoadBeginEvent.class, e -> {
             amounts.clear();
             maxes.clear();
+            depleted.clear();
         });
 
         for(Block block : content.blocks()){
@@ -165,6 +168,8 @@ public class FiniteOres{
         unitTiles.clear();
 
         Groups.unit.each(u -> {
+            if(u.controller() instanceof MinerAI) redirect(u, (MinerAI)u.controller());
+
             Tile tile = u.mineTile;
             if(tile == null || !finite(tile)) return;
 
@@ -178,6 +183,17 @@ public class FiniteOres{
                 unitTiles.put(u.id, pos);
             }
         });
+    }
+
+    static void redirect(Unit unit, MinerAI ai){
+        boolean stale = ai.ore != null && (depleted.contains(ai.ore.pos()) || ai.targetItem != null && ai.ore.drop() != ai.targetItem);
+        if(unit.mineTile != null && depleted.contains(unit.mineTile.pos())) stale = true;
+        if(!stale) return;
+
+        unit.mineTile = null;
+        ai.ore = null;
+        if(ai.targetItem != null && !indexer.hasOre(ai.targetItem)) ai.targetItem = null;
+        if(ai.targetItem != null) ai.ore = indexer.findClosestOre(unit, ai.targetItem);
     }
 
     static boolean use(Tile tile){
@@ -201,6 +217,7 @@ public class FiniteOres{
         maxes.remove(tile.pos());
         DGFx.oreDepleted.at(tile.worldx(), tile.worldy(), 0f, item.color);
         unindex(tile, item);
+        depleted.add(tile.pos());
         tile.setOverlayNet(Blocks.air);
         return true;
     }

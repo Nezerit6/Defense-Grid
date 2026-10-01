@@ -1,13 +1,15 @@
 package dg.graphics;
 
+import arc.Core;
 import arc.graphics.Color;
-import arc.graphics.g2d.Fill;
+import arc.graphics.g2d.*;
 import arc.math.*;
 import arc.util.Tmp;
 import arc.util.io.*;
 
 public class SmokeStyle{
     private static final Rand rand = new Rand();
+    private static TextureRegion puff;
 
     public int count = 7;
     public float spread = 9f;
@@ -18,6 +20,11 @@ public class SmokeStyle{
     public float alpha = 0.6f;
     public float lifeRand = 0f;
     public Color from = Color.valueOf("8b8c95"), to = Color.valueOf("6e7080");
+
+    static TextureRegion puff(){
+        if(puff == null) puff = Core.atlas.find("dg-smoke-puff");
+        return puff;
+    }
 
     public SmokeStyle(){
     }
@@ -40,15 +47,21 @@ public class SmokeStyle{
         for(int i = 0; i < count; i++){
             float life = 1f - rand.random(lifeRand), ang = rotation + rand.range(cone), len = rand.random(1f);
             float pin = fin / life;
-            if(pin >= 1f) continue;
+            if(pin >= 1f || alpha * (1f - pin) < 0.01f) continue;
 
             float pinpow = Interp.pow3Out.apply(pin), pout = 1f - pin;
             float z = height * pinpow, dst = (1f + spread * pinpow) * len;
             float rad = size * (0.5f + 0.9f * Mathf.clamp(pin * 3f)) * (0.7f + 0.3f * pout) * DGDraw3D.scale(z);
-            Color center = Tmp.c1.set(from).lerp(to, pin).mulA(alpha * pout), edge = Tmp.c2.set(center).a(0f);
-
-            Fill.light(DGDraw3D.x(x + Angles.trnsx(ang, dst), z), DGDraw3D.y(y + Angles.trnsy(ang, dst), z), 12, rad, center, edge);
+            float px = DGDraw3D.x(x + Angles.trnsx(ang, dst), z), py = DGDraw3D.y(y + Angles.trnsy(ang, dst), z);
+            if(puff().found()){
+                Draw.color(Tmp.c1.set(from).lerp(to, pin), alpha * pout);
+                Draw.rect(puff, px, py, rad * 2f, rad * 2f);
+            }else{
+                Color center = Tmp.c1.set(from).lerp(to, pin).mulA(alpha * pout);
+                Fill.light(px, py, 12, rad, center, Tmp.c2.set(center).a(0f));
+            }
         }
+        Draw.color();
     }
 
     public SmokeStyle set(SmokeStyle other){

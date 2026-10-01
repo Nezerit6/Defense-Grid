@@ -14,8 +14,20 @@ public class DGDraw3D{
     public static float lightAngle = 30f;
 
     private static final Color tmpCol = new Color();
+    private static long cachedFrame = -1;
+    private static float cachedZ, cachedFov = -1f, tanHalf;
+
     public static float cameraZ(){
-        return Math.max(Core.camera.width, Core.camera.height) / 2f / (float)Math.tan(fov / 2f * Mathf.degRad);
+        long frame = Core.graphics.getFrameId();
+        if(frame != cachedFrame){
+            if(fov != cachedFov){
+                cachedFov = fov;
+                tanHalf = (float)Math.tan(fov / 2f * Mathf.degRad);
+            }
+            cachedFrame = frame;
+            cachedZ = Math.max(Core.camera.width, Core.camera.height) / 2f / tanHalf;
+        }
+        return cachedZ;
     }
 
     public static float persp(float z){
