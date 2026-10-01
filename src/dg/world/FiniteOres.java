@@ -10,6 +10,7 @@ import arc.struct.*;
 import arc.util.*;
 import arc.util.pooling.*;
 import dg.content.DGFx;
+import mindustry.ai.BlockIndexer;
 import mindustry.content.Blocks;
 import mindustry.game.EventType.*;
 import mindustry.gen.*;
@@ -32,6 +33,7 @@ public class FiniteOres{
     public static final IntIntMap amounts = new IntIntMap(), maxes = new IntIntMap();
 
     private static final Seq<Tile> tiles = new Seq<>();
+    private static java.lang.reflect.Field oresField, allOresField, quadSize;
     private static final IntFloatMap unitTimers = new IntFloatMap(), lastTimers = new IntFloatMap();
     private static final IntIntMap unitTiles = new IntIntMap(), lastTiles = new IntIntMap();
     private static final Rect view = new Rect();
@@ -198,8 +200,31 @@ public class FiniteOres{
         amounts.remove(tile.pos());
         maxes.remove(tile.pos());
         DGFx.oreDepleted.at(tile.worldx(), tile.worldy(), 0f, item.color);
+        unindex(tile, item);
         tile.setOverlayNet(Blocks.air);
         return true;
+    }
+
+    static void unindex(Tile tile, Item item){
+        try{
+            if(oresField == null){
+                oresField = BlockIndexer.class.getDeclaredField("ores");
+                oresField.setAccessible(true);
+                allOresField = BlockIndexer.class.getDeclaredField("allOres");
+                allOresField.setAccessible(true);
+                quadSize = BlockIndexer.class.getDeclaredField("quadrantSize");
+                quadSize.setAccessible(true);
+            }
+            IntSeq[][][] ores = (IntSeq[][][])oresField.get(indexer);
+            if(ores == null || ores[item.id] == null) return;
+            int q = quadSize.getInt(indexer);
+            IntSeq seq = ores[item.id][tile.x / q][tile.y / q];
+            if(seq != null && seq.removeValue(tile.pos())){
+                ((ObjectIntMap<Item>)allOresField.get(indexer)).increment(item, -1);
+            }
+        }catch(Exception e){
+            Log.err("[dg] could not update ore index", e);
+        }
     }
 
     static int left(DrillBuild build, Item item){
