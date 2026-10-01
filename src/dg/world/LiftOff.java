@@ -3,6 +3,7 @@ package dg.world;
 import arc.*;
 import arc.graphics.*;
 import arc.graphics.g2d.*;
+import arc.graphics.gl.FrameBuffer;
 import arc.input.KeyCode;
 import arc.math.*;
 import arc.math.geom.*;
@@ -28,6 +29,8 @@ public class LiftOff{
     static final Seq<Structure> structures = new Seq<>();
     static final Seq<Building> selected = new Seq<>();
     static final ObjectSet<Building> seen = new ObjectSet<>();
+    static final Seq<Building> queue = new Seq<>();
+    static boolean split;
     static int startX = -1, startY = -1;
     static boolean selecting;
 
@@ -40,6 +43,28 @@ public class LiftOff{
         final Seq<Part> parts = new Seq<>();
         final FloatSeq thrusters = new FloatSeq();
         float x, y, w, h, time, seed;
+        FrameBuffer buffer;
+
+        void bake(){
+            int pw = Math.max(1, (int)(w / Draw.scl)), ph = Math.max(1, (int)(h / Draw.scl));
+            buffer = new FrameBuffer(pw, ph);
+            Mat proj = Tmp.m1.set(Draw.proj());
+            Draw.flush();
+            buffer.begin(Color.clear);
+            Draw.proj(Tmp.m2.setOrtho(0f, 0f, w, h));
+            Draw.reset();
+            for(Part p : parts){
+                Draw.rect(p.block.fullIcon, p.dx + w / 2f, p.dy + h / 2f, p.rotation);
+            }
+            Draw.flush();
+            buffer.end();
+            Draw.proj(proj);
+        }
+
+        void dispose(){
+            if(buffer != null) buffer.dispose();
+            buffer = null;
+        }
 
         float z(){
             if(time < ignition) return 1.5f * Interp.pow2In.apply(time / ignition);
@@ -51,6 +76,7 @@ public class LiftOff{
     public static void init(){
         Events.run(Trigger.update, LiftOff::update);
         Events.on(WorldLoadBeginEvent.class, e -> {
+            for(Structure s : structures) s.dispose();
             structures.clear();
             selecting = false;
         });
@@ -65,6 +91,8 @@ public class LiftOff{
 
         if(!headless && !mobile) updateInput();
 
+        if(state.isPaused()) return;
+
         for(int i = structures.size - 1; i >= 0; i--){
             Structure s = structures.get(i);
             s.time += Time.delta;
@@ -78,7 +106,8 @@ public class LiftOff{
                 Effect.shake(Mathf.clamp(s.time / ignition) * 2.5f, 4f, s.x, s.y);
             }
 
-            if(s.time > 2000f || z > DGDraw3D.cameraZ() * 0.9f){
+            if(s.time > 2000f || z > DGDraw3D.cameraZ() * 0.62f){
+                s.dispose();
                 structures.remove(i);
             }
         }
@@ -103,7 +132,9 @@ public class LiftOff{
         if(selecting && Core.input.keyRelease(key)){
             selecting = false;
             if(selected.any()){
-                if(net.client()){
+                if(split){
+                    ui.showInfoToast(Core.bundle.get("dg-liftoff-split"), 3f);
+                }else if(net.client()){
                     ui.showInfoToast(Core.bundle.get("dg-liftoff-host"), 3f);
                 }else{
                     launch(selected);
@@ -135,10 +166,28 @@ public class LiftOff{
                 selected.add(b);
             }
         }
+        split = !connected(selected);
+    }
+
+    public static boolean connected(Seq<Building> builds){
+        if(builds.size <= 1) return true;
+        ObjectSet<Building> all = new ObjectSet<>();
+        all.addAll(builds);
+        ObjectSet<Building> reached = new ObjectSet<>();
+        queue.clear();
+        queue.add(builds.first());
+        reached.add(builds.first());
+        while(queue.any()){
+            Building b = queue.pop();
+            for(Building o : b.proximity){
+                if(all.contains(o) && reached.add(o)) queue.add(o);
+            }
+        }
+        return reached.size == all.size;
     }
 
     public static void launch(Seq<Building> builds){
-        if(builds.isEmpty()) return;
+        if(builds.isEmpty() || !connected(builds)) return;
 
         Structure s = new Structure();
         float minX = Float.MAX_VALUE, minY = Float.MAX_VALUE, maxX = -Float.MAX_VALUE, maxY = -Float.MAX_VALUE;
@@ -175,6 +224,7 @@ public class LiftOff{
             if(b.isValid()) b.tile.removeNet();
         }
 
+        if(!headless) s.bake();
         structures.add(s);
         Sounds.missileLaunch.at(s.x, s.y, 0.6f, 1.5f);
     }
@@ -186,33 +236,35 @@ public class LiftOff{
             Tile end = world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
             Rect r = area(end, Tmp.r3);
             Draw.z(Layer.overlayUI);
+            Color col = split ? Pal.remove : Pal.accent;
             for(Building b : selected){
-                Lines.stroke(1f, Tmp.c1.set(Pal.accent).a(0.6f + Mathf.absin(4f, 0.4f)));
+                Lines.stroke(1f, Tmp.c1.set(col).a(0.6f + Mathf.absin(4f, 0.4f)));
                 Lines.square(b.x, b.y, b.block.size * tilesize / 2f + 1f);
             }
-            Drawf.dashRect(Pal.accent, r.x * tilesize - tilesize / 2f, r.y * tilesize - tilesize / 2f, r.width * tilesize, r.height * tilesize);
-            VeinHighlight.text(Core.bundle.format("dg-liftoff", selected.size), Core.input.mouseWorldX(), Core.input.mouseWorldY() + tilesize * 2f, 0.25f / Scl.scl(1f), Pal.accent);
+            Drawf.dashRect(col, r.x * tilesize - tilesize / 2f, r.y * tilesize - tilesize / 2f, r.width * tilesize, r.height * tilesize);
+            VeinHighlight.text(split ? Core.bundle.get("dg-liftoff-split") : Core.bundle.format("dg-liftoff", selected.size), Core.input.mouseWorldX(), Core.input.mouseWorldY() + tilesize * 2f, 0.25f / Scl.scl(1f), col);
         }
 
         float cz = DGDraw3D.cameraZ();
         for(Structure s : structures){
+            if(s.buffer == null) continue;
+            TextureRegion tex = Draw.wrap(s.buffer.getTexture());
             float z = s.z(), sc = DGDraw3D.scale(z), off = DGDraw3D.shadowOffset(z);
-            float fade = 1f - Mathf.curve(z, cz * 0.55f, cz * 0.88f);
-            float wobble = s.time < ignition ? Mathf.sin(Time.time, 1.5f, 0.4f * s.time / ignition) : 0f;
+            float fade = 1f - Mathf.curve(z, cz * 0.35f, cz * 0.6f);
+            float wobble = s.time < ignition ? Mathf.sin(s.time, 1.5f, 0.4f * s.time / ignition) : 0f;
             float lift = Mathf.clamp(s.time / ignition);
+            float cx = DGDraw3D.x(s.x + wobble, z), cy = DGDraw3D.y(s.y, z);
 
             Draw.z(Layer.block + 0.5f);
             Draw.color(0f, 0f, 0f, 0.35f * Mathf.clamp(1f - z / 300f));
             float shs = 1f + z / 250f;
-            for(Part p : s.parts){
-                Draw.rect(p.block.fullIcon, s.x + p.dx * shs - off, s.y + p.dy * shs - off, p.block.fullIcon.width * Draw.scl * shs, p.block.fullIcon.height * Draw.scl * shs, p.rotation);
-            }
+            Draw.rect(tex, s.x - off, s.y - off, s.w * shs, -s.h * shs);
 
             for(int i = 0; i < s.thrusters.size; i += 2){
                 float tx = s.thrusters.get(i), ty = s.thrusters.get(i + 1);
-                float flick = 0.8f + Mathf.absin(Time.time + i * 7f, 1.2f, 0.4f);
+                float flick = 0.8f + Mathf.absin(s.time + i * 7f, 1.2f, 0.4f);
                 float rad = (4f + 6f * lift) * flick * sc;
-                float px = DGDraw3D.x(tx, z), py = DGDraw3D.y(ty, z);
+                float px = cx + (tx - s.x) * sc, py = cy + (ty - s.y) * sc;
 
                 Draw.z(Layer.flyingUnit + 0.5f);
                 Draw.blend(Blending.additive);
@@ -228,15 +280,8 @@ public class LiftOff{
             }
 
             Draw.z(Layer.flyingUnit + 1f + z / 1000f);
-            float preX = Draw.xscl, preY = Draw.yscl;
-            Draw.xscl = Draw.yscl = sc;
             Draw.color(1f, 1f, 1f, fade);
-            for(Part p : s.parts){
-                float wx = s.x + p.dx + wobble, wy = s.y + p.dy;
-                Draw.rect(p.block.fullIcon, DGDraw3D.x(wx, z), DGDraw3D.y(wy, z), p.rotation);
-            }
-            Draw.xscl = preX;
-            Draw.yscl = preY;
+            Draw.rect(tex, cx, cy, s.w * sc, -s.h * sc);
             Draw.reset();
         }
     }
