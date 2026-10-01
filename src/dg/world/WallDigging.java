@@ -18,7 +18,7 @@ import mindustry.world.blocks.storage.CoreBlock;
 import static mindustry.Vars.*;
 
 public class WallDigging{
-    public static float digTime = 600f;
+    public static float digTime = 900f;
 
     static final ObjectSet<UnitType> coreUnits = new ObjectSet<>();
     static final IntIntMap digs = new IntIntMap();
@@ -128,14 +128,8 @@ public class WallDigging{
             Drawf.laser(Core.atlas.find("minelaser"), Core.atlas.find("minelaser-end"), px, py, ex, ey, 0.75f);
 
             if(unit.isLocal()){
-                float p = progress.get(e.value, 0f);
                 Lines.stroke(1f, Pal.accent);
                 Lines.poly(tile.worldx(), tile.worldy(), 4, tilesize / 2f * Mathf.sqrt2, Time.time);
-                Draw.color(Pal.darkerGray);
-                Lines.stroke(2f);
-                Lines.line(tile.worldx() - 4f, tile.worldy() - 6f, tile.worldx() + 4f, tile.worldy() - 6f);
-                Draw.color(Pal.accent);
-                Lines.line(tile.worldx() - 4f, tile.worldy() - 6f, tile.worldx() - 4f + 8f * p, tile.worldy() - 6f);
             }
             Draw.reset();
         }
