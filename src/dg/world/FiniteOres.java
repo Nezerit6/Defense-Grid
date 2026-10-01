@@ -85,6 +85,7 @@ public class FiniteOres{
 
         if(!headless){
             Events.run(Trigger.draw, FiniteOres::draw);
+            VeinHighlight.init();
         }
     }
 
@@ -204,27 +205,5 @@ public class FiniteOres{
             Draw.rect(floor.variantRegions[Mathf.randomSeed(tile.pos(), 0, Math.max(0, floor.variantRegions.length - 1))], tile.worldx(), tile.worldy());
         }
         Draw.color();
-
-        if(mobile) return;
-        Tile hover = world.tileWorld(Core.input.mouseWorldX(), Core.input.mouseWorldY());
-        if(!finite(hover) || (hover.build != null && !(hover.build instanceof DrillBuild))) return;
-
-        int left = amount(hover), max = max(hover);
-        String text = hover.overlay().itemDrop.emoji() + " " + left;
-        Color color = Tmp.c1.set(Color.white).lerp(Pal.remove, 1f - left / (float)Math.max(max, 1));
-
-        Draw.z(Layer.overlayUI);
-        Font font = Fonts.outline;
-        GlyphLayout layout = Pools.obtain(GlyphLayout.class, GlyphLayout::new);
-        boolean ints = font.usesIntegerPositions();
-        font.setUseIntegerPositions(false);
-        font.getData().setScale(0.25f / Scl.scl(1f));
-        layout.setText(font, text);
-        font.setColor(color);
-        font.draw(text, hover.worldx(), hover.worldy() + tilesize + layout.height / 2f, Align.center);
-        font.setColor(Color.white);
-        font.getData().setScale(1f);
-        font.setUseIntegerPositions(ints);
-        Pools.free(layout);
     }
 }
