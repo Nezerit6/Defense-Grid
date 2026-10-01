@@ -264,6 +264,44 @@ public class DGFx{
         risingSmoke(14, 16f, 30f, 5f, Color.valueOf("8b8c95"), Color.valueOf("4d4e58"), 150f, 180f, 0.45f)
     ),
 
+    powerSpark = new Effect(40f, 30f, e -> {
+        float load = Mathf.clamp(e.rotation), z = 2f + 9f * e.finpow();
+        rand.setSeed(e.id);
+        float dx = rand.range(4f) * e.fin(), dy = rand.range(4f) * e.fin();
+        float s = (0.6f + 0.8f * load) * e.fout() * DGDraw3D.scale(z);
+        Draw.blend(Blending.additive);
+        color(e.color, (0.35f + 0.65f * load) * e.fout());
+        Fill.square(DGDraw3D.x(e.x + dx, z), DGDraw3D.y(e.y + dy, z), s, 45f);
+        color(Color.white, (0.3f + 0.5f * load) * e.fout());
+        Fill.square(DGDraw3D.x(e.x + dx, z), DGDraw3D.y(e.y + dy, z), s * 0.45f, 45f);
+        Draw.blend();
+    }).layer(Layer.effect),
+
+    nodeBlast = new Effect(50f, 120f, e -> {
+        float r = 12f + e.rotation * 10f;
+        e.scaled(10f, s -> {
+            color(Color.white, s.fout());
+            Fill.circle(e.x, e.y, r * 0.7f * s.fout());
+        });
+        e.scaled(24f, s -> {
+            color(Color.white, e.color, s.fin());
+            stroke(3f * s.fout());
+            Lines.circle(e.x, e.y, 4f + r * 1.6f * s.finpow());
+        });
+        rand.setSeed(e.id);
+        for(int i = 0; i < 10 + (int)e.rotation * 4; i++){
+            float ang = rand.random(360f), hs = 0.8f + rand.random(1.6f), vz = 0.8f + rand.random(1.6f);
+            fly(e.time, hs, vz, 0f);
+            float x1 = DGDraw3D.x(e.x + trnsx(ang, flyDst), flyZ), y1 = DGDraw3D.y(e.y + trnsy(ang, flyDst), flyZ);
+            fly(Math.max(e.time - 3f, 0f), hs, vz, 0f);
+            float x2 = DGDraw3D.x(e.x + trnsx(ang, flyDst), flyZ), y2 = DGDraw3D.y(e.y + trnsy(ang, flyDst), flyZ);
+            color(Color.white, e.color, e.fin());
+            stroke(1.2f * e.fout());
+            line(x2, y2, x1, y1);
+        }
+        Drawf.light(e.x, e.y, r * 5f * e.fout(), e.color, 0.9f);
+    }),
+
     wallChips = new Effect(45f, 50f, e -> {
         shards(e, 2, 0.4f, 0.6f, 0.6f, 0.9f, 0.7f, 4, Tmp.c3.set(e.color).lerp(Color.white, 0.25f), e.color, Tmp.c4.set(e.color).mul(0.55f), 100f, 0.3f);
     }),
