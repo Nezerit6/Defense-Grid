@@ -1,11 +1,16 @@
 package dg.content.turrets;
 
+import arc.graphics.Blending;
 import arc.graphics.Color;
 import arc.math.Interp;
+import dg.content.DGFx;
 import dg.entities.bullet.ChainLightningBulletType;
+import dg.entities.part.*;
+import dg.world.blocks.SmokeTestBlock;
 import mindustry.content.*;
 import mindustry.entities.bullet.*;
 import mindustry.entities.effect.*;
+import mindustry.entities.part.DrawPart.PartProgress;
 import mindustry.entities.part.RegionPart;
 import mindustry.gen.Sounds;
 import mindustry.graphics.Layer;
@@ -23,7 +28,9 @@ import static mindustry.type.ItemStack.with;
 public class DGTurrets {
     public static Block
 
-            arclet, needler, shatter, cryolance, arcflash;
+            arclet, needler, shatter, cryolance, arcflash,
+
+            smokeTest;
 
     public static void load(){
 
@@ -43,7 +50,7 @@ public class DGTurrets {
             targetAir = false;
             heatColor = Color.red;
             shootSound = Sounds.spark;
-            shootEffect = Fx.lightningShoot;
+            shootEffect = DGFx.arcletShoot;
             consumePower(4.3f);
             coolant = consumeCoolant(0.1f);
 
@@ -57,7 +64,7 @@ public class DGTurrets {
 
                 lightningType = new BulletType(0.0001f, 0f){{
                     lifetime = Fx.lightning.lifetime;
-                    hitEffect = Fx.hitLancer;
+                    hitEffect = DGFx.arcHit;
                     despawnEffect = Fx.none;
                     status = StatusEffects.shocked;
                     statusDuration = 10f;
@@ -83,7 +90,8 @@ public class DGTurrets {
             recoil = 0.3f;
             inaccuracy = 4f;
             rotateSpeed = 10;
-            ammoUseEffect = Fx.casing1;
+            ammoUseEffect = DGFx.needleCasing;
+            shootEffect = DGFx.needleShoot;
             shootSound = Sounds.shoot;
             coolant = consumeCoolant(0.1f);
 
@@ -131,7 +139,10 @@ public class DGTurrets {
             ammoPerShot = 2;
             targetAir = false;
             shootSound = Sounds.artillery;
-            ammoUseEffect = Fx.casing2;
+            ammoUseEffect = DGFx.shatterCasing;
+            shootEffect = DGFx.shatterShoot;
+            smokeEffect = DGFx.shatterSmoke;
+            shake = 1.5f;
             coolant = consumeCoolant(0.2f);
 
             ammo(
@@ -142,6 +153,8 @@ public class DGTurrets {
                         splashDamageRadius = 26f;
                         knockback = 0.8f;
                         collidesTiles = false;
+                        hitEffect = DGFx.shatterBurst;
+                        despawnEffect = Fx.none;
 
                         hitColor = backColor = trailColor = Color.valueOf("ea8878");
                         trailLength = 12;
@@ -160,6 +173,7 @@ public class DGTurrets {
                             height = 5f;
                             pierceBuilding = true;
                             pierceCap = 2;
+                            hitEffect = despawnEffect = DGFx.shrapnelHit;
                         }};
                     }},
 
@@ -172,6 +186,8 @@ public class DGTurrets {
                         collidesTiles = false;
                         homingPower = 0.08f;
                         homingRange = 60f;
+                        hitEffect = DGFx.shatterBurst;
+                        despawnEffect = Fx.none;
                         reloadMultiplier = 1.15f;
                         ammoMultiplier = 3f;
 
@@ -192,6 +208,7 @@ public class DGTurrets {
                             height = 5f;
                             pierceBuilding = true;
                             pierceCap = 2;
+                            hitEffect = despawnEffect = DGFx.shrapnelHit;
                         }};
                     }},
 
@@ -205,6 +222,8 @@ public class DGTurrets {
                         status = StatusEffects.burning;
                         statusDuration = 60f * 10f;
                         makeFire = true;
+                        hitEffect = DGFx.shatterBurstFire;
+                        despawnEffect = Fx.none;
                         ammoMultiplier = 3f;
 
                         frontColor = Pal.lightishOrange;
@@ -225,25 +244,47 @@ public class DGTurrets {
                             height = 5f;
                             pierceBuilding = true;
                             pierceCap = 2;
+                            hitEffect = despawnEffect = DGFx.shrapnelHit;
                             status = StatusEffects.burning;
                         }};
                     }}
             );
 
             drawer = new DrawTurret(){{
-                parts.add(
-                        new RegionPart("-barrel"){{
+                parts.addAll(
+                        new LiftPart("-barrel"){{
                             progress = PartProgress.recoil.curve(Interp.pow2In);
                             moveY = -2f;
+                            lift = 1.6f;
+                            liftProgress = PartProgress.warmup.curve(Interp.smooth);
+                            shadowAlpha = 0.75f;
                             heatColor = Color.valueOf("f03b0e");
+                            heatLight = true;
                             mirror = false;
                         }},
                         new RegionPart("-front"){{
-                            heatProgress = PartProgress.warmup;
+                            heatProgress = PartProgress.warmup.mul(0.7f).add(PartProgress.heat.mul(0.3f));
+                            heatColor = Color.valueOf("ea8878");
                             progress = PartProgress.warmup;
                             mirror = true;
                             moveX = -1f;
                             under = true;
+                            moves.add(new PartMove(PartProgress.recoil.curve(Interp.pow2In), 0.6f, -0.9f, -4f));
+                        }},
+                        new RisePart(){{
+                            y = 6.5f;
+                            spread = 1f;
+                            particles = 4;
+                            lifetime = 50f;
+                            rise = 9f;
+                            drift = 2.5f;
+                            size = 0.9f;
+                            sizeTo = 2.2f;
+                            alpha = 0.5f;
+                            color = Color.valueOf("a5a6ad");
+                            colorTo = DGFx.smokeColor;
+                            progress = PartProgress.heat;
+                            layer = Layer.bullet - 1f;
                         }}
                 );
             }};
@@ -272,8 +313,8 @@ public class DGTurrets {
             heatColor = Color.valueOf("afeeee");
             shootSound = Sounds.malignShoot;
             loopSound = Sounds.none;
-            shootEffect = Fx.none;
-            smokeEffect = Fx.hitLancer;
+            shootEffect = DGFx.cryoShoot;
+            smokeEffect = DGFx.frostPuff;
             shoot.firstShotDelay = 60f;
             consumePower(3.6f);
 
@@ -290,21 +331,74 @@ public class DGTurrets {
                         homingRange = 60f;
                         ammoMultiplier = 0.2f;
                         collidesAir = false;
-                        hitEffect = Fx.none;
+                        hitEffect = despawnEffect = DGFx.cryoHit;
                         chargeEffect = new MultiEffect(Fx.lancerLaserCharge, Fx.lancerLaserChargeBegin);
                         fragBullets = 1;
                     }}
             );
 
             drawer = new DrawTurret(){{
-                parts.add(
+                parts.addAll(
                         new RegionPart("-nozzle"){{
                             progress = PartProgress.warmup;
                             heatProgress = PartProgress.charge;
                             mirror = true;
                             moveRot = 7f;
                             heatColor = Color.valueOf("afeeee");
+                            heatLight = true;
                             moves.add(new PartMove(PartProgress.recoil, 0f, 0f, -30f));
+                        }},
+                        new RegionPart("-liquid", Blending.additive, DGFx.cryo.cpy().a(0f)){{
+                            colorTo = DGFx.cryo.cpy().a(0.85f);
+                            progress = PartProgress.charge.curve(Interp.pow2In);
+                        }},
+                        new RisePart(){{
+                            mirror = true;
+                            x = 5.5f;
+                            y = -3.5f;
+                            spread = 1.5f;
+                            particles = 4;
+                            lifetime = 80f;
+                            rise = 7f;
+                            drift = 2f;
+                            size = 0.9f;
+                            sizeTo = 2.2f;
+                            alpha = 0.35f;
+                            color = Color.white;
+                            colorTo = DGFx.cryo;
+                            progress = PartProgress.warmup;
+                            layer = Layer.bullet - 1f;
+                        }},
+                        new OrbitPart(){{
+                            y = 6.5f;
+                            z = 3f;
+                            count = 6;
+                            radius = 9f;
+                            radiusTo = 3.2f;
+                            tilt = 62f;
+                            spinSpeed = 2.5f;
+                            spinProgress = 270f;
+                            shardWidth = 1.4f;
+                            shardLength = 3.2f;
+                            color = Color.valueOf("d8f6ff");
+                            backColor = Color.valueOf("6974c4");
+                            progress = PartProgress.charge.curve(Interp.pow2Out);
+                            alphaProgress = PartProgress.charge.curve(0f, 0.25f);
+                            lightOpacity = 0.25f;
+                        }},
+                        new OrbPart(){{
+                            y = 6.5f;
+                            z = 3f;
+                            radius = 0f;
+                            radiusTo = 1.4f;
+                            color = DGFx.cryo;
+                            coreColor = Color.valueOf("d8ffff");
+                            coreScl = 0.45f;
+                            progress = PartProgress.charge.curve(Interp.pow2In);
+                            spikes = 1.8f;
+                            spikeRotateSpeed = 2f;
+                            pulseScl = 3f;
+                            pulseMag = 0.1f;
                         }}
                 );
             }};
@@ -352,12 +446,7 @@ public class DGTurrets {
                                 shootSound = Sounds.none;
                                 bullet = new ExplosionBulletType(90f, 30f){{
                                     collidesAir = false;
-                                    shootEffect = new MultiEffect(Fx.blastExplosion, new WaveEffect(){{
-                                        colorFrom = colorTo = Pal.missileYellow;
-                                        sizeTo = 30f;
-                                        lifetime = 10f;
-                                        strokeFrom = 3f;
-                                    }});
+                                    shootEffect = DGFx.arcflashBoom;
                                     buildingDamageMultiplier = 0.35f;
 
                                     status = StatusEffects.blasted;
@@ -368,10 +457,14 @@ public class DGTurrets {
                     }}
             );
 
+            PartProgress armed = PartProgress.warmup.mul(PartProgress.reload.inv().curve(0.75f, 0.25f).clamp());
+
             drawer = new DrawTurret(){{
-                parts.add(
+                parts.addAll(
                         new RegionPart("-side"){{
                             progress = PartProgress.warmup;
+                            heatProgress = PartProgress.warmup.mul(0.4f).add(PartProgress.heat.mul(0.5f));
+                            heatColor = Pal.missileYellowBack;
                             mirror = true;
 
                             moveX = -0.5f;
@@ -394,6 +487,21 @@ public class DGTurrets {
                             mirror = false;
 
                             moves.add(new PartMove(PartProgress.warmup.inv(), 0f, -4f, 0f));
+                        }},
+                        new RisePart(){{
+                            y = -5f;
+                            spread = 1.2f;
+                            particles = 5;
+                            lifetime = 70f;
+                            rise = 10f;
+                            drift = 3f;
+                            size = 0.8f;
+                            sizeTo = 2.6f;
+                            alpha = 0.45f;
+                            color = Color.valueOf("a5a6ad");
+                            colorTo = DGFx.smokeColor;
+                            progress = armed;
+                            layer = Layer.bullet - 1f;
                         }}
                 );
             }};
@@ -416,9 +524,19 @@ public class DGTurrets {
             rotateSpeed = 1.8f;
 
             shootSound = Sounds.mediumCannon;
+            shootEffect = DGFx.arcflashLaunch;
+            smokeEffect = DGFx.arcflashSmoke;
             coolant = consumeCoolant(0.2f);
 
             limitRange();
+        }};
+
+        smokeTest = new SmokeTestBlock("smoke-test"){{
+            requirements(Category.effect, BuildVisibility.sandboxOnly, with());
+            size = 2;
+            health = 400;
+            smokeX = -3f;
+            smokeY = 3.5f;
         }};
     }
 }
