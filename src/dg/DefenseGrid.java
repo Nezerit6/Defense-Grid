@@ -37,6 +37,7 @@ public class DefenseGrid extends Mod{
     @Override
     public void loadContent(){
         DGStatus.load();
+        dg.content.DGWeathers.load();
         DGTurrets.load();
         DGArsenal.load();
         DGTechTree.load();
